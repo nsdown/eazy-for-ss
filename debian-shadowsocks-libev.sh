@@ -18,7 +18,13 @@ if [ $(id -u) != "0" ]; then
     echo "Error: You must be root to run this script!!"
     exit 1
 fi
-    
+
+# debian only
+if [[ ! -e /etc/debian_version ]]; then
+	echo "Looks like you aren't running this installer on a Debian-based system"
+	exit
+fi
+
 #Set shadowsocks-libev config password
     echo "Please input password for shadowsocks-libev:"
     read -p "(Default password: 123456):" shadowsockspwd
