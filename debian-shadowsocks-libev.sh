@@ -49,6 +49,7 @@ apt-get update -y
 apt-get upgrade -y
 apt-get install build-essential autoconf libtool libssl-dev gcc vim -y
 apt-get install git -y
+ulimit -n 51200
 git clone https://github.com/madeye/shadowsocks-libev.git
 cd shadowsocks-libev 
 ./configure 
