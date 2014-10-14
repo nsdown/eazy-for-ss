@@ -73,7 +73,7 @@ sed -i "/By default this script does nothing./a\nohup /usr/local/bin/ss-server -
 #set iptables only for debian
 iptables -I  INPUT -p tcp -m tcp --dport ${shadowsockspt} -j ACCEPT
 iptables -I  INPUT -p udp -m udp --dport ${shadowsockspt} -j ACCEPT
-sed -i "/By default this script does nothing./a\iptables -I  INPUT -p tcp -m tcp --dport ${shadowsockspt} -j ACCEPT\niptables -I  INPUT -p udp -m udp --dport ${shadowsockspt} -j ACCEPT\nulimit -n 51200\nsysctl -p" /etc/rc.local
+sed -i "/By default this script does nothing./a\iptables -I  INPUT -p tcp -m tcp --dport ${shadowsockspt} -j ACCEPT\niptables -I  INPUT -p udp -m udp --dport ${shadowsockspt} -j ACCEPT" /etc/rc.local
 
 
 # end
