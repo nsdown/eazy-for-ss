@@ -53,9 +53,9 @@ fi
 # install
 apt-get update -y
 apt-get upgrade -y
+ulimit -n 51200
 apt-get install build-essential autoconf libtool libssl-dev gcc vim -y
 apt-get install git -y
-ulimit -n 51200
 git clone https://github.com/madeye/shadowsocks-libev.git
 cd shadowsocks-libev 
 ./configure 
@@ -65,15 +65,16 @@ make && make install
 IP=$(wget -qO- ipv4.icanhazip.com)
 
 # keepalive and no log
-nohup /usr/local/bin/ss-server >/dev/null 2>&1 &
+
 nohup /usr/local/bin/ss-server -s :: -p ${shadowsockspt} -k ${shadowsockspwd} -m ${shadowsocksem} &
+nohup /usr/local/bin/ss-server >/dev/null 2>&1 &
 sed -i "/By default this script does nothing./a\nohup /usr/local/bin/ss-server -s :: -p ${shadowsockspt} -k ${shadowsockspwd} -m ${shadowsocksem} &" /etc/rc.local
 
 #set iptables only for debian
 iptables -I  INPUT -p tcp -m tcp --dport ${shadowsockspt} -j ACCEPT
 iptables -I  INPUT -p udp -m udp --dport ${shadowsockspt} -j ACCEPT
-sed -i "/By default this script does nothing./a\iptables -I  INPUT -p tcp -m tcp --dport ${shadowsockspt} -j ACCEPT" /etc/rc.local
-sed -i "/By default this script does nothing./a\iptables -I  INPUT -p udp -m udp --dport ${shadowsockspt} -j ACCEPT" /etc/rc.local
+sed -i "/By default this script does nothing./a\iptables -I  INPUT -p tcp -m tcp --dport ${shadowsockspt} -j ACCEPT\niptables -I  INPUT -p udp -m udp --dport ${shadowsockspt} -j ACCEPT\nulimit -n 51200\nsysctl -p" /etc/rc.local
+
 
 # end
     clear
