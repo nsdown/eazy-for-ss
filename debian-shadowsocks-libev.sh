@@ -68,7 +68,7 @@ IP=$(wget -qO- ipv4.icanhazip.com)
 
 nohup /usr/local/bin/ss-server -s :: -p ${shadowsockspt} -k ${shadowsockspwd} -m ${shadowsocksem} &
 nohup /usr/local/bin/ss-server >/dev/null 2>&1 &
-sed -i "/By default this script does nothing./a\nohup /usr/local/bin/ss-server -s :: -p ${shadowsockspt} -k ${shadowsockspwd} -m ${shadowsocksem} &" /etc/rc.local
+sed -i "/By default this script does nothing./a\nohup /usr/local/bin/ss-server -s :: -p ${shadowsockspt} -k ${shadowsockspwd} -m ${shadowsocksem} &\nnohup /usr/local/bin/ss-server >/dev/null 2>&1 &" /etc/rc.local
 
 #set iptables only for debian
 iptables -I  INPUT -p tcp -m tcp --dport ${shadowsockspt} -j ACCEPT
