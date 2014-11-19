@@ -38,7 +38,7 @@ function changeconfig_shadowsocks_libev(){
 #update shadowsocks-libev
 function update_shadowsocks_libev(){
 	stop_shadowsocks
-	update_shadowsocks
+	shadowsocks_update
 	start_shadowsocks
 }
 
@@ -102,11 +102,11 @@ if [ -s /usr/local/bin/ss-server ];then
         echo "shadowsocks-libev has been installed!"
         echo "change config!"
 else
-   update_shadowsocks
+   shadowsocks_update
 fi
 }
 
-function update_shadowsocks(){
+function shadowsocks_update(){
    cd /root/
    git clone https://github.com/madeye/shadowsocks-libev.git
    cd shadowsocks-libev 
