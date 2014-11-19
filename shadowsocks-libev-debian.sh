@@ -19,16 +19,18 @@ function install_shadowsocks_libev(){
 	debian
 	get_config
 	pre_install
-        install
+        shadowsocks_install
         config_shadowsocks
+	stop_shadowsocks
 	start_shadowsocks
 	show_shadowsocks    
 }
 
 #change config
-function changepwd_shadowsocks_libev(){
+function changeconfig_shadowsocks_libev(){
         get_config
 	config_shadowsocks
+	stop_shadowsocks
 	start_shadowsocks
 	show_shadowsocks
 }
@@ -87,12 +89,17 @@ function get_config(){
     echo "####################################"
 }
 
-function install(){
+function shadowsocks_install(){
 # install check
 if [ -s /usr/local/bin/ss-server ];then
         echo "shadowsocks-libev has been installed!"
         echo "change config!"
 else
+   shadowsocks_update
+fi
+}
+
+shadowsocks_update(){
    cd /root/
    git clone https://github.com/madeye/shadowsocks-libev.git
    cd shadowsocks-libev 
@@ -100,11 +107,9 @@ else
    make && make install
    cd /root/
    rm -rf shadowsocks-libev
-fi
 }
 
 function config_shadowsocks(){
-
 # set config 
  if [ ! -d /etc/shadowsocks-libev ];then
         mkdir /etc/shadowsocks-libev
@@ -120,8 +125,8 @@ function config_shadowsocks(){
 EOF
 }
 
-function start_shadowsocks(){
-#stop
+function stop_shadowsocks(){
+#stop all
 ss_pid=`pidof ss-server | awk '{print $1}'`
 if [ ! -z $ss_pid ]; then
         for pid in `pidof ss-server`
@@ -132,6 +137,9 @@ if [ ! -z $ss_pid ]; then
             fi
         done
 fi
+}
+
+function start_shadowsocks(){
 #start
 nohup /usr/local/bin/ss-server -c /etc/shadowsocks-libev/config.json > /dev/null 2>&1 &
 #Add run on system start up
@@ -151,7 +159,7 @@ if [ $? -eq 0 ]; then
     IP=$(wget -qO- ipv4.icanhazip.com)
 	if [ -z $IP ]; then
         IP=`curl -s ifconfig.me/ip`
-    fi
+        fi
     clear
     echo ""
     echo "Congratulations!Shadowsocks-libev start success!"
@@ -175,11 +183,14 @@ case "$action" in
 install)
     install_shadowsocks_libev
     ;;
-changepwd)
-    changepwd_shadowsocks_libev
+changeconfig)
+    changeconfig_shadowsocks_libev
+    ;;
+update)
+    update_shadowsocks_libev
     ;;
 *)
     echo "Arguments error! [${action} ]"
-    echo "Usage: `basename $0` {install|changepwd}"
+    echo "Usage: `basename $0` {install|changeconfig|update}"
     ;;
 esac
