@@ -15,19 +15,19 @@ echo ""
 
 # Install Shadowsocks-libev
 function install_shadowsocks_libev(){
-    root
+        root
 	debian
 	pre_install
 	get_config	    
-    install
-    config_shadowsocks
+        install
+        config_shadowsocks
 	start_shadowsocks
 	show_shadowsocks    
 }
 
 #change config
 function changepwd_shadowsocks_libev(){
-    get_config
+        get_config
 	config_shadowsocks
 	start_shadowsocks
 	show_shadowsocks
@@ -121,6 +121,7 @@ EOF
 }
 
 function start_shadowsocks(){
+#stop
 ssid=`pidof ss-server`
 if [ ! -z $ssid ]; then
         for pid in $ssid
@@ -131,12 +132,12 @@ if [ ! -z $ssid ]; then
             fi
         done
 fi
-
+#start
 nohup /usr/local/bin/ss-server -c /etc/shadowsocks-libev/config.json > /dev/null 2>&1 &
-
+#Add run on system start up
 cat /etc/rc.local | grep 'ss-server -c' > /dev/null 2>&1
 if [ $? -ne 0 ]; then
-         sed -i "/By default this script does nothing./a\nohup /usr/local/bin/ss-server -c /etc/shadowsocks-libev/config.json > /dev/null 2>&1 &" /etc/rc.local
+        sed -i "/By default this script does nothing./a\nohup /usr/local/bin/ss-server -c /etc/shadowsocks-libev/config.json > /dev/null 2>&1 &" /etc/rc.local
 fi
 
 }
