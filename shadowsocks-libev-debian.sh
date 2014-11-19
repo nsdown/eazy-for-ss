@@ -124,7 +124,7 @@ EOF
 
 function start_shadowsocks(){
 #stop
-ss_pid=`ps -ef | grep -v grep | grep -v ps | grep -i '/usr/local/bin/ss-server' | awk '{print $2}'`
+ss_pid=`pidof ss-server | awk '{print $1}'`
 if [ ! -z $ss_pid ]; then
         for pid in $ss_pid
         do
