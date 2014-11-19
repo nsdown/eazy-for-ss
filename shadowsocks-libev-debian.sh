@@ -126,7 +126,7 @@ function start_shadowsocks(){
 #stop
 ss_pid=`pidof ss-server | awk '{print $1}'`
 if [ ! -z $ss_pid ]; then
-        for pid in $ss_pid
+        for pid in 'pidof ss-server'
         do
             kill -9 $pid
             if [ $? -eq 0 ]; then
