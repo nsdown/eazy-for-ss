@@ -136,7 +136,7 @@ fi
 #start
 nohup /usr/local/bin/ss-server -c /etc/shadowsocks-libev/config.json > /dev/null 2>&1 &
 #Add run on system start up
-cat /etc/rc.local | grep 'ss-server -c' > /dev/null 2>&1
+cat /etc/rc.local | grep 'ss-server -c /etc/shadowsocks-libev/config.json' > /dev/null 2>&1
 if [ $? -ne 0 ]; then
         sed -i "/By default this script does nothing./a\nohup /usr/local/bin/ss-server -c /etc/shadowsocks-libev/config.json > /dev/null 2>&1 &" /etc/rc.local
 fi
