@@ -59,6 +59,7 @@ function pre_install(){
 }
 
 function get_config(){
+clear
 # Get shadowsocks-libev config password
     echo "Please input password for shadowsocks-libev:"
     read -p "(Default password: 123456):" shadowsockspwd
