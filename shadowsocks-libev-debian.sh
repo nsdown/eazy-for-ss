@@ -99,7 +99,7 @@ else
 fi
 }
 
-shadowsocks_update(){
+function shadowsocks_update(){
    cd /root/
    git clone https://github.com/madeye/shadowsocks-libev.git
    cd shadowsocks-libev 
