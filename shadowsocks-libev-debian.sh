@@ -17,8 +17,8 @@ echo ""
 function install_shadowsocks_libev(){
         root
 	debian
+	get_config
 	pre_install
-	get_config	    
         install
         config_shadowsocks
 	start_shadowsocks
@@ -84,19 +84,13 @@ clear
     fi
     echo "port:$shadowsocksem"
     echo "####################################"
-# Get IP
-    IP=$(wget -qO- ipv4.icanhazip.com)
-	if [ -z $IP ]; then
-        IP=`curl -s ifconfig.me/ip`
-    fi
-    echo "####################################"
 }
 
 function install(){
 # install check
 if [ -s /usr/local/bin/ss-server ];then
         echo "shadowsocks-libev has been installed!"
-        echo "change congfig!"
+        echo "change config!"
 else
    cd /root/
    git clone https://github.com/madeye/shadowsocks-libev.git
@@ -107,6 +101,12 @@ fi
 }
 
 function config_shadowsocks(){
+# Get IP
+    IP=$(wget -qO- ipv4.icanhazip.com)
+	if [ -z $IP ]; then
+        IP=`curl -s ifconfig.me/ip`
+    fi
+# set config 
  if [ ! -d /etc/shadowsocks-libev ];then
         mkdir /etc/shadowsocks-libev
  fi
