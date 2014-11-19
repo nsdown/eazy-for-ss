@@ -98,6 +98,8 @@ else
    cd shadowsocks-libev 
    ./configure 
    make && make install
+   cd /root/
+   rm -rf shadowsocks-libev
 fi
 }
 
