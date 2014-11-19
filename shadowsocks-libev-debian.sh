@@ -13,7 +13,7 @@ echo "# Install Shadowsocks(libev) for Debian/Ubuntu (32bit/64bit)"
 echo "#############################################################"
 echo ""
 
-# Install Shadowsocks-libev
+# install Shadowsocks-libev
 function install_shadowsocks_libev(){
         root
 	debian
@@ -33,6 +33,13 @@ function changeconfig_shadowsocks_libev(){
 	stop_shadowsocks
 	start_shadowsocks
 	show_shadowsocks
+}
+
+#update shadowsocks-libev
+function update_shadowsocks_libev(){
+	stop_shadowsocks
+	update_shadowsocks
+	start_shadowsocks
 }
 
 # Check if user is root
