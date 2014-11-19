@@ -56,10 +56,11 @@ function pre_install(){
    apt-get upgrade -y
    ulimit -n 51200
    apt-get install -y wget curl build-essential autoconf libtool libssl-dev gcc vim sudo git
+   clear
 }
 
 function get_config(){
-clear
+
 # Get shadowsocks-libev config password
     echo "Please input password for shadowsocks-libev:"
     read -p "(Default password: 123456):" shadowsockspwd
