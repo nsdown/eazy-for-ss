@@ -95,7 +95,7 @@ function install(){
 # install check
 if [ -s /usr/local/bin/ss-server ];then
         echo "shadowsocks-libev has been installed!"
-        exit 0
+        echo "change congfig!"
 else
    cd /root/
    git clone https://github.com/madeye/shadowsocks-libev.git
