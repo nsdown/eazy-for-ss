@@ -64,7 +64,8 @@ function pre_install(){
    apt-get update -y
    apt-get upgrade -y
    ulimit -n 51200
-   apt-get install -y wget curl build-essential autoconf libtool libssl-dev gcc vim sudo git
+   apt-get install -y build-essential autoconf libtool libssl-dev gcc 
+   apt-get install -y vim sudo git gawk debhelper wget curl
    clear
 }
 
