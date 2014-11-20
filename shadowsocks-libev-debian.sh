@@ -59,12 +59,13 @@ function uninstall_shadowsocks_libev(){
             mv /opt/rc.local_bak /etc/rc.local
         fi
         # delete config file
-        rm -rf /etc/shadowsocks
+        rm -rf /etc/shadowsocks-libev
         # delete shadowsocks
         rm -f /usr/local/bin/ss-local
         rm -f /usr/local/bin/ss-tunnel
         rm -f /usr/local/bin/ss-server
         rm -f /usr/local/bin/ss-redir
+        rm -f /usr/local/share/man/man8/shadowsocks-libev.8
         rm -f /usr/local/share/man/man8/shadowsocks.8
         echo "Shadowsocks-libev uninstall success!"
     else
