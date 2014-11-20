@@ -42,6 +42,36 @@ function update_shadowsocks_libev(){
 	start_shadowsocks
 }
 
+#unistall shadowsocks-libev
+function uninstall_shadowsocks_libev(){
+    printf "Are you sure uninstall Shadowsocks-libev? (y/n) "
+    printf "\n"
+    read -p "(Default: n):" answer
+    if [ -z $answer ]; then
+        answer="n"
+    fi
+    if [ "$answer" = "y" ]; then
+        #stop ss
+        stop_shadowsocks
+        # restore /etc/rc.local
+        if [[ -s /opt/rc.local_bak ]]; then
+            rm -f /etc/rc.local
+            mv /opt/rc.local_bak /etc/rc.local
+        fi
+        # delete config file
+        rm -rf /etc/shadowsocks
+        # delete shadowsocks
+        rm -f /usr/local/bin/ss-local
+        rm -f /usr/local/bin/ss-tunnel
+        rm -f /usr/local/bin/ss-server
+        rm -f /usr/local/bin/ss-redir
+        rm -f /usr/local/share/man/man8/shadowsocks.8
+        echo "Shadowsocks-libev uninstall success!"
+    else
+        echo "uninstall cancelled, Nothing to do"
+    fi
+}
+
 # Check if user is root
 function root(){
 if [ $(id -u) != "0" ]; then
@@ -198,8 +228,11 @@ changeconfig)
 update)
     update_shadowsocks_libev
     ;;
+uninstall)
+    uninstall_shadowsocks_libev
+    ;;
 *)
     echo "Arguments error! [${action} ]"
-    echo "Usage: `basename $0` {install|changeconfig|update}"
+    echo "Usage: `basename $0` {install|changeconfig|update|uninstall}"
     ;;
 esac
