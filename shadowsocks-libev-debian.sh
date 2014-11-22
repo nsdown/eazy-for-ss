@@ -192,14 +192,14 @@ fi
 
 
 function show_shadowsocks(){
-# Run success or not
-ps -ef | grep -v grep | grep -v ps | grep -i '/usr/local/bin/ss-server' > /dev/null 2>&1
-if [ $? -eq 0 ]; then 
 # Get IP
     IP=$(wget -qO- ipv4.icanhazip.com)
 	if [ -z $IP ]; then
         IP=`curl -s ifconfig.me/ip`
         fi
+# Run success or not
+ps -ef | grep -v grep | grep -v ps | grep -i '/usr/local/bin/ss-server' > /dev/null 2>&1
+if [ $? -eq 0 ]; then 
     clear
     echo ""
     echo "Congratulations!Shadowsocks-libev start success!"
