@@ -186,6 +186,7 @@ cat /etc/rc.local | grep 'ss-server -c /etc/shadowsocks-libev/config.json' > /de
 if [ $? -ne 0 ]; then
        cp -rpf /etc/rc.local /opt/rc.local_bak
        sed -i "/By default this script does nothing./a\nohup /usr/local/bin/ss-server -c /etc/shadowsocks-libev/config.json > /dev/null 2>&1 &" /etc/rc.local
+       sed -i "/By default this script does nothing./a\ulimit -n 51200" /etc/rc.local
 fi
 
 }
