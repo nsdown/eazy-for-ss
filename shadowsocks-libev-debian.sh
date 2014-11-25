@@ -167,8 +167,8 @@ EOF
 function stop_shadowsocks(){
 #stop all
 ss_pid=`pidof ss-server`
-if [ ! -z $ss_pid ]; then
-        for pid in {$ss_pid}
+if [ ! -z "$ss_pid" ]; then
+        for pid in $ss_pid
         do
             kill -9 $pid
             if [ $? -eq 0 ]; then
