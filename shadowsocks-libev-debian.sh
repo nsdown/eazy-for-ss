@@ -170,7 +170,7 @@ ss_pid=`pidof ss-server`
 if [ ! -z "$ss_pid" ]; then
         for pid in $ss_pid
         do
-            kill -9 $pid
+            kill -9 $pid > /dev/null 2>&1
             if [ $? -eq 0 ]; then
             echo "Shadowsocks-libev process[$pid] has been killed"
             fi
