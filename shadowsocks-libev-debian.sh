@@ -144,6 +144,7 @@ function shadowsocks_update(){
    cd shadowsocks-libev 
    ./configure 
    make && make install
+   cd ..
    rm -rf shadowsocks-libev
 }
 
