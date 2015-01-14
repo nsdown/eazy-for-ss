@@ -16,23 +16,23 @@ echo ""
 # install ShadowVPN
 function install_ShadowVPN_libsodium(){
     root
-	debian
-	get_config
-	pre_install
+    debian
+    get_config
+    pre_install
     ShadowVPN_install
     config_ShadowVPN
-	stop_ShadowVPN
-	start_ShadowVPN
-	show_ShadowVPN    
+    stop_ShadowVPN
+    start_ShadowVPN
+    show_ShadowVPN    
 }
 
 #change config
 function changeconfig_ShadowVPN_libsodium(){
     get_config
-	config_ShadowVPN
-	stop_ShadowVPN
-	start_ShadowVPN
-	show_ShadowVPN
+    config_ShadowVPN
+    stop_ShadowVPN
+    start_ShadowVPN
+    show_ShadowVPN
 }
 
 #update ShadowVPN
@@ -41,7 +41,7 @@ function update_ShadowVPN_libsodium(){
 	cp -rpf /etc/shadowvpn/server.conf /opt/server.conf
 	ShadowVPN_update
 	rm -f /etc/shadowvpn/server.conf
-    mv /opt/server.conf /etc/shadowvpn/server.conf
+	mv /opt/server.conf /etc/shadowvpn/server.conf
 	rm -f /opt/server.conf
 	start_ShadowVPN
 }
