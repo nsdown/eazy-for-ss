@@ -90,7 +90,8 @@ fi
 
 # pre_install
 function pre_install(){
-   cd /root/
+   cd ~
+   echo linux-image-`uname -r` hold | sudo dpkg --set-selections
    apt-get update -y
    apt-get upgrade -y
    apt-get install -y build-essential autoconf libtool libssl-dev gcc 
@@ -129,7 +130,7 @@ fi
 }
 
 function ShadowVPN_update(){
-   cd /root/
+   cd ~
    git clone https://github.com/clowwindy/ShadowVPN.git
    cd ShadowVPN
    git submodule update --init
