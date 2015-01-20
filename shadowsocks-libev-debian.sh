@@ -197,7 +197,7 @@ function show_shadowsocks(){
 # Get IP
     IP=$(wget -qO- ipv4.icanhazip.com)
 	if [ -z $IP ]; then
-        IP=`curl -s ifconfig.me/ip`
+        IP=`curl -s liyangyijie.sinaapp.com/ip/`
         fi
 # Run success or not
 ps -ef | grep -v grep | grep -v ps | grep -i '/usr/local/bin/ss-server' > /dev/null 2>&1
