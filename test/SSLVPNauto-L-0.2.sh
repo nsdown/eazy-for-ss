@@ -252,10 +252,12 @@ function pre_install(){
    apt-get update 
    apt-get install -y vim sudo git gawk debhelper wget curl
    apt-get install -y -t wheezy-backports  libgnutls28-dev
-   apt-get install -y libgmp3-dev m4 gcc pkg-config make gnutls-bin libtalloc-dev
-   apt-get install -y build-essential libwrap0-dev libpam0g-dev libdbus-1-dev libreadline-dev libnl-route-3-dev libprotobuf-c0-dev libpcl1-dev libopts25-dev autogen libseccomp-dev libnl-nf-3-dev
-   apt-get install -y libreadline6 libreadline5 libreadline6-dev
    apt-get install -y -t jessie  libprotobuf-c-dev libhttp-parser-dev
+   apt-get install -y libreadline6 libreadline5 libreadline6-dev libgmp3-dev m4 gcc pkg-config make gnutls-bin libtalloc-dev build-essential libwrap0-dev libpam0g-dev libdbus-1-dev libreadline-dev libnl-route-3-dev libprotobuf-c0-dev libpcl1-dev libopts25-dev autogen libseccomp-dev libnl-nf-3-dev
+   apt-get install -y -t wheezy-backports  libgnutls28-dev
+   apt-get install -y -t jessie  libprotobuf-c-dev libhttp-parser-dev
+   apt-get install -y libreadline6 libreadline5 libreadline6-dev libgmp3-dev m4 gcc pkg-config make gnutls-bin libtalloc-dev build-essential libwrap0-dev libpam0g-dev libdbus-1-dev libreadline-dev libnl-route-3-dev libprotobuf-c0-dev libpcl1-dev libopts25-dev autogen libseccomp-dev libnl-nf-3-dev
+   
    
    #if sources del
    if [ "$oc_wheezy_backports" = "n" ]; then
