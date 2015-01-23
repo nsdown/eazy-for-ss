@@ -137,7 +137,7 @@ function get_Custom_configuration(){
     read -p "(Default :y):" self_signed_ca
 if [ "$self_signed_ca" = "n" ]; then
         print_warn "You have to put your CA and Key to /etc/ocserv !!!"
-		print_warn "You have to change your CA and Key'name to server-ca.pem and server-key.pem !!!"
+		print_warn "You have to change your CA and Key'name to server-cert.pem and server-key.pem !!!"
 		echo "####################################"
 		print_info "Input your own domain for ocserv:"
         read -p "(Default :$ocserv_hostname):" fqdnname
@@ -255,7 +255,7 @@ function pre_install(){
    apt-get install -y libgmp3-dev m4 gcc pkg-config make gnutls-bin libtalloc-dev
    apt-get install -y build-essential libwrap0-dev libpam0g-dev libdbus-1-dev libreadline-dev libnl-route-3-dev libprotobuf-c0-dev libpcl1-dev libopts25-dev autogen libseccomp-dev libnl-nf-3-dev
    apt-get install -y libreadline6 libreadline5 libreadline6-dev
-   apt-get install -y -t jessie  libprotobuf-c-dev libhttp-parser-dev   
+   apt-get install -y -t jessie  libprotobuf-c-dev libhttp-parser-dev
    
    #if sources del
    if [ "$oc_wheezy_backports" = "n" ]; then
@@ -412,10 +412,10 @@ if [ ! -z "$oc_pid" ]; then
 fi
 }
 function start_ocserv(){
-if [ ! -f /etc/ocserv/server-ca.pem -o ! -f /etc/ocserv/server-key.pem ]
+if [ ! -f /etc/ocserv/server-cert.pem ] || [ ! -f /etc/ocserv/server-key.pem ]
 	then
 		print_warn "You have to put your CA and Key to /etc/ocserv !!!"
-		print_warn "You have to change your CA and Key'name to server-ca.pem and server-key.pem !!!"
+		print_warn "You have to change your CA and Key'name to server-cert.pem and server-key.pem !!!"
 		die "CA or KEY NOT Found !!!"
 fi
 
@@ -450,11 +450,11 @@ if [ $? -eq 0 ];then
 	fi
 elif [ "$self_signed_ca" = "n" -a "$ca_login" = "" ]; then    
 	print_warn "1,You have to put your CA and Key to /etc/ocserv !!!"
-	print_warn "2,You have to change your CA and Key'name to server-ca.pem and server-key.pem !!!"
+	print_warn "2,You have to change your CA and Key'name to server-cert.pem and server-key.pem !!!"
 	print_warn "3,You have to use 'sudo ocpasswd -c /etc/ocserv/ocpasswd username' to add users. "
 	print_warn "4,You have to start ocserv by this script!"
 elif [ "$self_signed_ca" = "n" -a "$ca_login" = "y" ]; then  
-    echo "test"
+    echo "test 2"
 else
     print_warn "ocserv start failure,ocserv is offline!"	
 fi
