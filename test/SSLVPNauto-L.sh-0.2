@@ -43,7 +43,7 @@ function install_OpenConnect_VPN_server(){
     }
     echo "ok!"
     print_info "Press any key to start...or Press Ctrl+C to cancel"
-    char=`get_char`
+    ocserv_char=`get_char`
     	
 	pre_install
 	
@@ -56,7 +56,7 @@ function install_OpenConnect_VPN_server(){
 	if [ "$ca_login" = "y" ]; then
 	ca_login_ocserv
 	fi
-	set_ocserv_conf
+	
 	stop_ocserv
 	start_ocserv
 	show_ocserv    
@@ -68,11 +68,13 @@ function check_Required {
 	then
 		die 'Must be run by root user'
 	fi
+	print_info "root ok"
     # debian only
 	if [ ! -f /etc/debian_version ]
 	then
 		die "Looks like you aren't running this installer on a Debian-based system"
 	fi
+	print_info "debian ok"
 	#Only Debian 7+!!!
 	if grep ^6. /etc/debian_version > /dev/null
     then
@@ -83,16 +85,23 @@ function check_Required {
     then
 	    die "Your system is debian 5. Only for Debian 7+!!!"
 	fi
+	print_info "debian_version ok"
 	#check install
 	if [ -f /usr/sbin/ocserv ]
 	then
 	    die "ocserv has been installed!!!"
 	fi
+	print_info "not installed ok"
 	#get own IP info
     ocserv_hostname=$(wget -qO- ipv4.icanhazip.com)
     if [ $? -ne 0 -o -z $ocserv_hostname ]; then
         ocserv_hostname=`curl -s liyangyijie.sinaapp.com/ip/`
     fi
+	print_info "get ip ok"
+	#get default port
+	ocserv_tcpport_Default=$(wget -qO- --no-check-certificate https://raw.githubusercontent.com/fanyueciyuan/useful/master/ocserv.conf | grep '^tcp-port' | sed 's/tcp-port = //g')
+	ocserv_udpport_Default=$(wget -qO- --no-check-certificate https://raw.githubusercontent.com/fanyueciyuan/useful/master/ocserv.conf | grep '^udp-port' | sed 's/udp-port = //g')
+	print_info "get default port ok"
 }
 #error and force-exit
 function die {
@@ -169,12 +178,15 @@ fi
 
 #which port to use
     print_info "which port to use?"
-    read -p "(Default :999):" which_port
+    read -p "(Default :$ocserv_tcpport_Default):" which_port
 if [ "$which_port" ! = "" ]; then
         ocserv_tcpport_set=$which_port
         ocserv_udpport_set=$which_port
+		print_info "Your Port Is:$which_port"
+else
+        print_info "Your Port Is:$ocserv_tcpport_Default"
 fi
-    print_info "Your Port Is:$which_port"
+    
     echo "####################################"
 	
 #Whether to use the certificate login
@@ -231,7 +243,7 @@ function pre_install(){
    apt-get update
    clear
 }
-#get and install
+#set and install
 function tar_ocserv_install(){
    cd ~
 #max router rulers
@@ -242,15 +254,16 @@ function tar_ocserv_install(){
    tar xvf ocserv-0.8.9.tar.xz
    rm -rf ocserv-0.8.9.tar.xz
    cd ocserv-0.8.9
-#have to use "" then $ work
+#have to use "" then $ work ,set router limit
    sed -i "s/#define MAX_CONFIG_ENTRIES 64/#define MAX_CONFIG_ENTRIES $max_router/g" src/vpn.h
    ./configure --prefix=/usr --sysconfdir=/etc && make && make install
    
    cp doc/profile.xml /etc/ocserv   
+   sed -i "s@localhost@$ocserv_hostname@g" /etc/ocserv/profile.xml
    cd ..
    rm -rf ocserv-0.8.9
    
-# get config from net
+# get config file from net
    mkdir -p /etc/ocserv/CAforOC
    cd /etc/ocserv
    wget https://raw.githubusercontent.com/fanyueciyuan/useful/master/ocserv.conf --no-check-certificate
@@ -260,9 +273,6 @@ function tar_ocserv_install(){
    chmod 600 ocpasswd
    
 #set port 
-   ocserv_tcpport_Default=`cat /etc/ocserv/ocserv.conf | grep '^tcp-port' | sed 's/tcp-port = //g'`
-   ocserv_udpport_Default=`cat /etc/ocserv/ocserv.conf | grep '^udp-port' | sed 's/udp-port = //g'`
-
   if [ "$ocserv_tcpport_set" ! = "" ]; then
     sed -i "s@tcp-port = $ocserv_tcpport_Default@tcp-port = $ocserv_tcpport_set@g" /etc/ocserv/ocserv.conf
   fi
@@ -277,7 +287,7 @@ function tar_ocserv_install(){
 #set ca_login
   if [ "$ca_login" = "y" ]; then
     sed -i "s@auth = "plain[/etc/ocserv/ocpasswd]"@#auth = "plain[/etc/ocserv/ocpasswd]"@g" /etc/ocserv/ocserv.conf
-	  sed -i "s@#auth = "certificate"@auth = "certificate"@" /etc/ocserv/ocserv.conf
+	sed -i "s@#auth = "certificate"@auth = "certificate"@" /etc/ocserv/ocserv.conf
   fi
   
 }
@@ -295,7 +305,7 @@ function make_ocserv_ca(){
 #all in one doc
 cd /etc/ocserv/CAforOC
 
-print_info "We are making Your Self-signed CA for ocserv!"
+print_info "Making Self-signed CA for ocserv."
 
 # Self-signed CA set
 #CA's name
@@ -315,6 +325,8 @@ if [ "$fqdnname" = "" ]; then
         fqdnname=$ocserv_hostname
 fi
 
+#default domain 
+sed -i "s@#default-domain = example.com@default-domain = $fqdnname@" /etc/ocserv/ocserv.conf
 
 #server-ca
 certtool --generate-privkey --outfile ca-key.pem
@@ -347,7 +359,7 @@ certtool --generate-certificate --load-privkey server-key.pem --load-ca-certific
 
 cp server-cert.pem /etc/ocserv/ && cp server-key.pem /etc/ocserv/
    
-
+print_info "Self-signed CA for ocserv ok"
 
 }
 
