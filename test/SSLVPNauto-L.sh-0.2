@@ -197,7 +197,7 @@ fi
 #which port to use
     print_info "which port to use?"
     read -p "(Default :$ocserv_tcpport_Default):" which_port
-if [ "$which_port" ! = "" ]; then
+if [ "$which_port" != "" ]; then
         ocserv_tcpport_set=$which_port
         ocserv_udpport_set=$which_port
 		print_info "Your Port Is:$which_port"
@@ -378,11 +378,11 @@ print_warn "CA_Login DO NOT support"
 function set_ocserv_conf(){
 
 #set port 
-  if [ "$ocserv_tcpport_set" ! = "" ]; then
+  if [ "$ocserv_tcpport_set" != "" ]; then
     sed -i "s@tcp-port = $ocserv_tcpport_Default@tcp-port = $ocserv_tcpport_set@g" /etc/ocserv/ocserv.conf
   fi
 
-  if [ "$ocserv_udpport_set" ! = "" ]; then
+  if [ "$ocserv_udpport_set" != "" ]; then
     sed -i "s@udp-port = $ocserv_udpport_Default@udp-port = $ocserv_udpport_set@g" /etc/ocserv/ocserv.conf
   fi
   
@@ -431,29 +431,33 @@ fi
 function show_ocserv(){
 ocserv_port=`cat /etc/ocserv/ocserv.conf | grep '^tcp-port' | sed 's/tcp-port = //g'`
 clear
+
 ps -ef | grep -v grep | grep -v ps | grep -i '/usr/sbin/ocserv' > /dev/null 2>&1
 
-if [ $? -eq 0 ] &&  [ "$ca_login" = "y" ]; then
-
-    echo "test!"
+if [ $? -eq 0 ];then
+    if [ "$ca_login" = "y" ]; then
 	
-elif [ $? -eq 0 ]; then 
-    echo ""
+	echo "test!"
+	
+	else
+	echo ""
     echo -e "\033[41;37m Your server domain is \033[0m" "$fqdnname:$ocserv_port"
     echo -e "\033[41;37m You can use 'sudo ocpasswd -c /etc/ocserv/ocpasswd username' to add users. \033[0m "
     echo ""    
     print_info "enjoy it!"
     echo ""
-fi
-
-if [ "$self_signed_ca" = "n" ]; then    
+	fi
+elif [ "$self_signed_ca" = "n" -a "$ca_login" = "" ]; then    
 	print_warn "1,You have to put your CA and Key to /etc/ocserv !!!"
 	print_warn "2,You have to change your CA and Key'name to server-ca.pem and server-key.pem !!!"
 	print_warn "3,You have to use 'sudo ocpasswd -c /etc/ocserv/ocpasswd username' to add users. "
 	print_warn "4,You have to start ocserv by this script!"
+elif [ "$self_signed_ca" = "n" -a "$ca_login" = "y" ]; then  
+    echo "test"
 else
-	print_warn "ocserv start failure,ocserv is offline!"	
+    print_warn "ocserv start failure,ocserv is offline!"	
 fi
+
 
 }
 
