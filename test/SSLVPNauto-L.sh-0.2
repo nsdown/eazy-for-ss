@@ -1,6 +1,5 @@
 #! /bin/bash
-PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
-export PATH
+
 #===============================================================================================
 #   System Required:  Only Debian 7+!!! （x64 ok）
 #   Description:  Install OpenConnect VPN server for Debian
@@ -19,19 +18,21 @@ echo ""
 # install 
 function install_OpenConnect_VPN_server(){
     
-#check system and get IP
+#check system and get IP port
     check_Required
 	
-# self-configuration or not
-    echo "Do you want to install ocserv with your self-configuration?(y/n)"
-    read -p "(Default :n):" self_config_ocserv
-    if [ "$self_config_ocserv" = "y" ]; then
-    print_info "Install ocserv with your self-configuration!!!"
-	  print_warn "You have to know what you are modifying , it is recommended that you use the default settings!"
-	  get_self_configuration
+#custom-configuration or not
+    print_info "Do you want to install ocserv with Custom Configuration?(y/n)"
+    read -p "(Default :n):" Custom_config_ocserv
+    if [ "$Custom_config_ocserv" = "y" ]; then
+    print_info "Install ocserv with custom configuration!!!"
+	print_warn "You have to know what you are modifying , it is recommended that you use the default settings!"
+	get_Custom_configuration
+	else
+	print_info "Automatic installation."
     fi
 	
-#Press any key to star
+#press any key to star
     get_char(){
         SAVEDSTTY=`stty -g`
         stty -echo
@@ -41,24 +42,30 @@ function install_OpenConnect_VPN_server(){
         stty echo
         stty $SAVEDSTTY
     }
-    echo "ok!"
-    print_info "Press any key to start...or Press Ctrl+C to cancel"
+    echo ""
+    print_info "press any key to start...or Press Ctrl+C to cancel"
     ocserv_char=`get_char`
     	
 	pre_install
 	
 	tar_ocserv_install
 	
-	if [ "$self_config_ca" = "" ]; then
+	if [ "$self_signed_ca" = "" ]; then
 	make_ocserv_ca
 	fi
 	
 	if [ "$ca_login" = "y" ]; then
-	ca_login_ocserv
+	ca_login_ocserv	
 	fi
 	
+	set_ocserv_conf
+	
 	stop_ocserv
+	
+	if [ "$self_signed_ca" = "" ]; then	
 	start_ocserv
+	fi
+	
 	show_ocserv    
 }
 
@@ -92,7 +99,7 @@ function check_Required {
 	    die "ocserv has been installed!!!"
 	fi
 	print_info "not installed ok"
-	#get own IP info
+	#get own IPv4 info
     ocserv_hostname=$(wget -qO- ipv4.icanhazip.com)
     if [ $? -ne 0 -o -z $ocserv_hostname ]; then
         ocserv_hostname=`curl -s liyangyijie.sinaapp.com/ip/`
@@ -121,16 +128,27 @@ function print_warn {
 	echo -e '\033[0m'
 }
 
-function get_self_configuration(){
-#Whether to use Self-signed CA
+function get_Custom_configuration(){
+
+        echo "####################################"
+#Whether to make a Self-signed CA
     print_info "Do you need make a Self-signed CA for your server?(y/n)"
-    read -p "(Default :y):" self_config_ca
-if [ "$self_config_ca" = "n" ]; then
+    read -p "(Default :y):" self_signed_ca
+if [ "$self_signed_ca" = "n" ]; then
         print_warn "You have to put your CA and Key to /etc/ocserv !!!"
 		print_warn "You have to change your CA and Key'name to server-ca.pem and server-key.pem !!!"
+		echo "####################################"
+		print_info "Input your own domain for ocserv:"
+        read -p "(Default :$ocserv_hostname):" fqdnname
+        if [ "$fqdnname" = "" ]; then
+            fqdnname=$ocserv_hostname
+        fi
+		print_info "Your own domain for ocserv:$fqdnname"
+		
 else 
-	    self_config_ca=""
+	    self_signed_ca=""
 		print_info "Make a Self-signed CA"
+		echo "####################################"
 	
 # Get CA's name
     print_info "Your CA's name:"
@@ -163,15 +181,15 @@ else
         fqdnname=$ocserv_hostname
     fi
     print_info "Your server's FQDN:$fqdnname"
-    echo "####################################"
+    
 	
 fi    
-    
+    echo "####################################"    
 #set max router rulers
 	print_info "How many router rulers do you need?(Cisco Anyconnect client limit: 200)"
 	read -p "(Default :200):" max_router
 if [ "$max_router" = "" ]; then
-	max_router="200"
+	    max_router="200"
 fi
 	print_info "$max_router"
 	echo "####################################"
@@ -193,11 +211,19 @@ fi
 	print_info "Whether to use the certificate login?(y/n)"
 	read -p "(Default :n):" ca_login 
 if [ "$ca_login" = "y" ]; then
-       	print_warn "You can get userCA from /etc/ocserv/UserCa !!!"
-		print_warn "NEXT you have to input your username! "
+        
+		#ca login support~
+#      	print_warn "You can get userCA from /etc/ocserv/UserCa !!!"
+#   	print_warn "NEXT you have to input your username! "
+		
+		#ca login is not support~
+		print_warn "sorry,ca login is not support,now!"
+		print_warn "we have to choose the plain login！"
+		print_warn "username and password are necessary！"
+		ca_login=""
 else 
 	    ca_login=""
-		print_info "the password login"
+		print_info "the plain login."
 fi    
     echo "####################################"
 }
@@ -221,7 +247,7 @@ function pre_install(){
    oc_jessie="n"
    fi
    
-   #update
+   #update dependencies
    apt-get update 
    apt-get install -y vim sudo git gawk debhelper wget curl
    apt-get install -y -t wheezy-backports  libgnutls28-dev
@@ -241,9 +267,10 @@ function pre_install(){
    
    #keep update
    apt-get update
-   clear
+   
+   print_info "dependencies  ok"
 }
-#set and install
+# install
 function tar_ocserv_install(){
    cd ~
 #max router rulers
@@ -257,14 +284,14 @@ function tar_ocserv_install(){
 #have to use "" then $ work ,set router limit
    sed -i "s/#define MAX_CONFIG_ENTRIES 64/#define MAX_CONFIG_ENTRIES $max_router/g" src/vpn.h
    ./configure --prefix=/usr --sysconfdir=/etc && make && make install
-   
+   mkdir -p /etc/ocserv/CAforOC
    cp doc/profile.xml /etc/ocserv   
    sed -i "s@localhost@$ocserv_hostname@g" /etc/ocserv/profile.xml
    cd ..
    rm -rf ocserv-0.8.9
    
 # get config file from net
-   mkdir -p /etc/ocserv/CAforOC
+  
    cd /etc/ocserv
    wget https://raw.githubusercontent.com/fanyueciyuan/useful/master/ocserv.conf --no-check-certificate
    wget https://raw.githubusercontent.com/fanyueciyuan/useful/master/ocserv-sysctl.sh  --no-check-certificate
@@ -272,24 +299,7 @@ function tar_ocserv_install(){
    touch ocpasswd
    chmod 600 ocpasswd
    
-#set port 
-  if [ "$ocserv_tcpport_set" ! = "" ]; then
-    sed -i "s@tcp-port = $ocserv_tcpport_Default@tcp-port = $ocserv_tcpport_set@g" /etc/ocserv/ocserv.conf
-  fi
-
-  if [ "$ocserv_udpport_set" ! = "" ]; then
-    sed -i "s@udp-port = $ocserv_udpport_Default@udp-port = $ocserv_udpport_set@g" /etc/ocserv/ocserv.conf
-  fi
-  
-  
-  
-
-#set ca_login
-  if [ "$ca_login" = "y" ]; then
-    sed -i "s@auth = "plain[/etc/ocserv/ocpasswd]"@#auth = "plain[/etc/ocserv/ocpasswd]"@g" /etc/ocserv/ocserv.conf
-	sed -i "s@#auth = "certificate"@auth = "certificate"@" /etc/ocserv/ocserv.conf
-  fi
-  
+   print_info "ocserv install ok"
 }
 function git_ocserv_install(){
    cd ~
@@ -304,8 +314,6 @@ function git_ocserv_install(){
 function make_ocserv_ca(){
 #all in one doc
 cd /etc/ocserv/CAforOC
-
-print_info "Making Self-signed CA for ocserv."
 
 # Self-signed CA set
 #CA's name
@@ -325,8 +333,6 @@ if [ "$fqdnname" = "" ]; then
         fqdnname=$ocserv_hostname
 fi
 
-#default domain 
-sed -i "s@#default-domain = example.com@default-domain = $fqdnname@" /etc/ocserv/ocserv.conf
 
 #server-ca
 certtool --generate-privkey --outfile ca-key.pem
@@ -368,9 +374,28 @@ function ca_login_ocserv(){
 print_warn "CA_Login DO NOT support"
 
 }
+# set
 function set_ocserv_conf(){
 
-#to tar install
+#set port 
+  if [ "$ocserv_tcpport_set" ! = "" ]; then
+    sed -i "s@tcp-port = $ocserv_tcpport_Default@tcp-port = $ocserv_tcpport_set@g" /etc/ocserv/ocserv.conf
+  fi
+
+  if [ "$ocserv_udpport_set" ! = "" ]; then
+    sed -i "s@udp-port = $ocserv_udpport_Default@udp-port = $ocserv_udpport_set@g" /etc/ocserv/ocserv.conf
+  fi
+  
+#default domain 
+sed -i "s@#default-domain = example.com@default-domain = $fqdnname@" /etc/ocserv/ocserv.conf 
+  
+
+#set ca_login
+  if [ "$ca_login" = "y" ]; then
+    sed -i "s@auth = "plain[/etc/ocserv/ocpasswd]"@#auth = "plain[/etc/ocserv/ocpasswd]"@g" /etc/ocserv/ocserv.conf
+	sed -i "s@#auth = "certificate"@auth = "certificate"@" /etc/ocserv/ocserv.conf
+  fi
+  
 }
 function stop_ocserv(){
 #stop all
@@ -407,16 +432,27 @@ function show_ocserv(){
 ocserv_port=`cat /etc/ocserv/ocserv.conf | grep '^tcp-port' | sed 's/tcp-port = //g'`
 clear
 ps -ef | grep -v grep | grep -v ps | grep -i '/usr/sbin/ocserv' > /dev/null 2>&1
-if [ $? -eq 0 ]; then 
-    echo "Finished."
-    echo -e "\033[41;37m Your server domain is \033[0m" "$fqdnname:$ocserv_port"
-    echo -e "\033[41;37m You have to use 'sudo ocpasswd -c /etc/ocserv/ocpasswd username' to add users. \033[0m "
-    echo ""    
-    print_info "enjoy"
+
+if [ $? -eq 0 ] &&  [ "$ca_login" = "y" ]; then
+
+    echo "test!"
+	
+elif [ $? -eq 0 ]; then 
     echo ""
+    echo -e "\033[41;37m Your server domain is \033[0m" "$fqdnname:$ocserv_port"
+    echo -e "\033[41;37m You can use 'sudo ocpasswd -c /etc/ocserv/ocpasswd username' to add users. \033[0m "
+    echo ""    
+    print_info "enjoy it!"
+    echo ""
+fi
+
+if [ "$self_signed_ca" = "n" ]; then    
+	print_warn "1,You have to put your CA and Key to /etc/ocserv !!!"
+	print_warn "2,You have to change your CA and Key'name to server-ca.pem and server-key.pem !!!"
+	print_warn "3,You have to use 'sudo ocpasswd -c /etc/ocserv/ocpasswd username' to add users. "
+	print_warn "4,You have to start ocserv by this script!"
 else
-    print_warn "ocserv start failure!"
-	exit
+	print_warn "ocserv start failure,ocserv is offline!"	
 fi
 
 }
@@ -435,8 +471,11 @@ restart)
 stop)
     stop_ocserv
     ;;
+start)
+    start_ocserv
+    ;;
 *)
     echo "Arguments error! [${action} ]"
-    echo "Usage: `basename $0` {install|restart|stop}"
+    echo "Usage: `basename $0` {install|restart|stop|start}"
     ;;
 esac
