@@ -197,7 +197,7 @@ else
 fi    
     echo "####################################"    
 #set max router rulers
-	print_info "How many router rulers do you need?(Cisco Anyconnect client limit: 200)"
+	print_info "The maximum number of routing table rules?(Cisco Anyconnect client limit: 200)"
 	read -p "(Default :200):" max_router
 if [ "$max_router" = "" ]; then
 	    max_router="200"
