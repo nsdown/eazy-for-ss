@@ -1,6 +1,5 @@
 #! /bin/bash
-PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
-export PATH
+
 #===============================================================================================
 #   System Required:  Debian/Ubuntu (32bit/64bit)
 #   Description:  Install Shadowsocks(libev) for Debian/Ubuntu
@@ -15,23 +14,20 @@ echo ""
 
 # install Shadowsocks-libev
 function install_shadowsocks_libev(){
-        root
+    root
 	debian
 	get_config
-	pre_install
-        shadowsocks_install
-        config_shadowsocks
-	stop_shadowsocks
-	start_shadowsocks
-	show_shadowsocks    
+	config_shadowsocks
+    shadowsocks_update
+    show_shadowsocks    
 }
 
 #change config
 function changeconfig_shadowsocks_libev(){
-        get_config
+    get_config
 	config_shadowsocks
 	stop_shadowsocks
-	start_shadowsocks
+	sudo /etc/init.d/shadowsocks-libev start
 	show_shadowsocks
 }
 
@@ -39,10 +35,10 @@ function changeconfig_shadowsocks_libev(){
 function update_shadowsocks_libev(){
 	stop_shadowsocks
 	shadowsocks_update
-	start_shadowsocks
+	
 }
 
-#unistall shadowsocks-libev
+#uninstall shadowsocks-libev
 function uninstall_shadowsocks_libev(){
     printf "Are you sure uninstall Shadowsocks-libev? (y/n) "
     printf "\n"
@@ -53,21 +49,8 @@ function uninstall_shadowsocks_libev(){
     if [ "$answer" = "y" ]; then
         #stop ss
         stop_shadowsocks
-        # restore /etc/rc.local
-        if [[ -s /opt/rc.local_bak_ss_l ]]; then
-            rm -f /opt/rc.local_bak_ss_l
-            sed -i "s@nohup /usr/local/bin/ss-server -c /etc/shadowsocks-libev/config.json -u > /dev/null 2>&1 &@@" /etc/rc.local
-			sed -i "s@ulimit -n 51200@@" /etc/rc.local
-        fi
-        # delete config file
-        rm -rf /etc/shadowsocks-libev
-        # delete shadowsocks
-        rm -f /usr/local/bin/ss-local
-        rm -f /usr/local/bin/ss-tunnel
-        rm -f /usr/local/bin/ss-server
-        rm -f /usr/local/bin/ss-redir
-        rm -f /usr/local/share/man/man8/shadowsocks-libev.8
-        rm -f /usr/local/share/man/man8/shadowsocks.8
+        #remove
+        apt-get remove -y shadowsocks-libev
         echo "Shadowsocks-libev uninstall success!"
     else
         echo "uninstall cancelled, Nothing to do"
@@ -92,14 +75,60 @@ fi
 
 # pre_install
 function pre_install(){
-   cd ~
-   echo linux-image-`uname -r` hold | sudo dpkg --set-selections
-   apt-get update 
-   apt-get upgrade -y
-   ulimit -n 51200
-   apt-get install -y build-essential autoconf libtool libssl-dev gcc make 
-   apt-get install -y vim sudo git gawk debhelper curl
-   clear
+
+#tcp choice
+sysctl net.ipv4.tcp_available_congestion_control | grep 'hybla' > /dev/null 2>&1
+if [ $? -eq 0 ]; then 
+tcp_congestion_ss="hybla"
+else
+tcp_congestion_ss="cubic"
+fi
+
+cat > /etc/sysctl.d/local.conf<<EOF
+
+fs.file-max = 51200
+
+net.core.rmem_max = 67108864
+net.core.wmem_max = 67108864
+net.core.rmem_default = 65536
+net.core.wmem_default = 65536
+net.core.netdev_max_backlog = 4096
+net.core.somaxconn = 4096
+
+net.ipv4.tcp_syncookies = 1
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_tw_recycle = 0
+net.ipv4.tcp_fin_timeout = 30
+net.ipv4.tcp_keepalive_time = 1200
+net.ipv4.ip_local_port_range = 10000 65000
+net.ipv4.tcp_max_syn_backlog = 4096
+net.ipv4.tcp_max_tw_buckets = 5000
+net.ipv4.tcp_fastopen = 3
+net.ipv4.tcp_rmem = 4096 87380 67108864
+net.ipv4.tcp_wmem = 4096 65536 67108864
+net.ipv4.tcp_mtu_probing = 1
+net.ipv4.tcp_congestion_control = $tcp_congestion_ss
+EOF
+
+sysctl -p /etc/sysctl.d/local.conf
+    
+   # Debian version 6.x.x
+	if grep ^6. /etc/debian_version > /dev/null
+	then
+		echo "deb http://shadowsocks.org/debian squeeze main" >> /etc/apt/sources.list
+		
+	fi
+
+	# Debian version 7.x.x
+	if grep ^7. /etc/debian_version > /dev/null
+	then
+		echo "deb http://shadowsocks.org/debian wheezy main" >> /etc/apt/sources.list
+		
+	fi
+
+	wget -O- http://shadowsocks.org/debian/1D27208A.gpg | sudo apt-key add -	
+	   
+    clear
 }
 
 function get_config(){
@@ -130,24 +159,18 @@ function get_config(){
     echo "####################################"
 }
 
-function shadowsocks_install(){
-# install check
-if [ -s /usr/local/bin/ss-server ];then
-        echo "shadowsocks-libev has been installed!"
-        echo "change config!"
-else
-   shadowsocks_update
-fi
-}
 
 function shadowsocks_update(){
-   cd ~
-   git clone https://github.com/madeye/shadowsocks-libev.git
-   cd shadowsocks-libev 
-   ./configure 
-   make && make install
-   cd ..
-   rm -rf shadowsocks-libev
+
+sudo apt-get update
+   
+sudo apt-get install shadowsocks-libev -y
+
+N_MAXFD=`cat /etc/default/shadowsocks-libev | grep '^MAXFD' | sed 's/MAXFD=//g'`
+sed -i "s@MAXFD=$N_MAXFD@MAXFD=51200@" /etc/default/shadowsocks-libev
+
+sudo /etc/init.d/shadowsocks-libev restart
+
 }
 
 function config_shadowsocks(){
@@ -180,28 +203,16 @@ if [ ! -z "$ss_pid" ]; then
 fi
 }
 
-function start_shadowsocks(){
-#start
-nohup /usr/local/bin/ss-server -c /etc/shadowsocks-libev/config.json -u > /dev/null 2>&1 &
-#Add run on system start up
-cat /etc/rc.local | grep 'ss-server -c /etc/shadowsocks-libev/config.json -u' > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-       cp -rpf /etc/rc.local /opt/rc.local_bak_ss_l
-       sed -i "/By default this script does nothing./a\nohup /usr/local/bin/ss-server -c /etc/shadowsocks-libev/config.json -u > /dev/null 2>&1 &" /etc/rc.local
-       sed -i "/By default this script does nothing./a\ulimit -n 51200" /etc/rc.local
-fi
-
-}
 
 
 function show_shadowsocks(){
 # Get IP
     IP=$(wget -qO- ipv4.icanhazip.com)
 	if [ -z $IP ]; then
-        IP=`curl -s liyangyijie.sinaapp.com/ip/`
+        IP=`wget -qO- liyangyijie.sinaapp.com/ip/`
         fi
 # Run success or not
-ps -ef | grep -v grep | grep -v ps | grep -i '/usr/local/bin/ss-server' > /dev/null 2>&1
+ps -ef | grep -v grep | grep -v ps | grep -i 'ss-server' > /dev/null 2>&1
 if [ $? -eq 0 ]; then 
     clear
     echo ""
