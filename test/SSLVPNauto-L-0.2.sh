@@ -69,6 +69,13 @@ function install_OpenConnect_VPN_server(){
 	show_ocserv    
 }
 
+function reinstall_ocserv {
+    stop_ocserv
+	rm -rf /etc/ocserv
+	rm -rf /usr/sbin/ocserv
+	install_OpenConnect_VPN_server
+}
+
 function check_Required {
 	# Check root
 	if [ $(/usr/bin/id -u) != "0" ]
@@ -100,12 +107,16 @@ function check_Required {
 	fi
 	print_info "not installed ok"
 	#get own IPv4 info
+	print_info "getting ip ......"
+	apt-get update  -qq
+	apt-get install -qq -y vim sudo gawk wget curl nano sed
     ocserv_hostname=$(wget -qO- ipv4.icanhazip.com)
     if [ $? -ne 0 -o -z $ocserv_hostname ]; then
         ocserv_hostname=`curl -s liyangyijie.sinaapp.com/ip/`
     fi
 	print_info "get ip ok"
 	#get default port
+	print_info "getting default port ......"
 	ocserv_tcpport_Default=$(wget -qO- --no-check-certificate https://raw.githubusercontent.com/fanyueciyuan/useful/master/ocserv.conf | grep '^tcp-port' | sed 's/tcp-port = //g')
 	ocserv_udpport_Default=$(wget -qO- --no-check-certificate https://raw.githubusercontent.com/fanyueciyuan/useful/master/ocserv.conf | grep '^udp-port' | sed 's/udp-port = //g')
 	print_info "get default port ok"
@@ -233,8 +244,7 @@ fi
 function pre_install(){
    #keep kernel
    echo linux-image-`uname -r` hold | sudo dpkg --set-selections
-   apt-get update && sudo apt-get upgrade -y
-   
+   sudo apt-get upgrade -y
    #sources check
    cat /etc/apt/sources.list | grep 'deb http://ftp.debian.org/debian wheezy-backports main contrib non-free' > /dev/null 2>&1
    if [ $? -ne 0 ]; then
@@ -249,15 +259,11 @@ function pre_install(){
    fi
    
    #update dependencies
-   apt-get update 
-   apt-get install -y vim sudo git gawk debhelper wget curl
+   apt-get update   
    apt-get install -y -t wheezy-backports  libgnutls28-dev
    apt-get install -y -t jessie  libprotobuf-c-dev libhttp-parser-dev
-   apt-get install -y libreadline6 libreadline5 libreadline6-dev libgmp3-dev m4 gcc pkg-config make gnutls-bin libtalloc-dev build-essential libwrap0-dev libpam0g-dev libdbus-1-dev libreadline-dev libnl-route-3-dev libprotobuf-c0-dev libpcl1-dev libopts25-dev autogen libseccomp-dev libnl-nf-3-dev
-   apt-get install -y -t wheezy-backports  libgnutls28-dev
-   apt-get install -y -t jessie  libprotobuf-c-dev libhttp-parser-dev
-   apt-get install -y libreadline6 libreadline5 libreadline6-dev libgmp3-dev m4 gcc pkg-config make gnutls-bin libtalloc-dev build-essential libwrap0-dev libpam0g-dev libdbus-1-dev libreadline-dev libnl-route-3-dev libprotobuf-c0-dev libpcl1-dev libopts25-dev autogen libseccomp-dev libnl-nf-3-dev
-   
+   apt-get install -y libreadline6 libreadline5 libreadline6-dev libgmp3-dev m4 gcc pkg-config make gnutls-bin libtalloc-dev build-essential libwrap0-dev libpam0g-dev libdbus-1-dev libreadline-dev libnl-route-3-dev libprotobuf-c0-dev libpcl1-dev libopts25-dev autogen libseccomp-dev libnl-nf-3-dev debhelper
+     
    
    #if sources del
    if [ "$oc_wheezy_backports" = "n" ]; then
@@ -269,7 +275,7 @@ function pre_install(){
    fi
    
    #keep update
-   apt-get update
+   apt-get update 
    
    print_info "dependencies  ok"
 }
@@ -399,6 +405,8 @@ sed -i "s@#default-domain = example.com@default-domain = $fqdnname@" /etc/ocserv
 	sed -i "s@#auth = "certificate"@auth = "certificate"@" /etc/ocserv/ocserv.conf
   fi
   
+print_info "set ocserv ok"
+  
 }
 function stop_ocserv(){
 #stop all
@@ -481,8 +489,11 @@ stop)
 start)
     start_ocserv
     ;;
+reinstall)
+    reinstall_ocserv
+    ;;
 *)
     echo "Arguments error! [${action} ]"
-    echo "Usage: `basename $0` {install|restart|stop|start}"
+    echo "Usage: `basename $0` {install|restart|stop|start|reinstall}"
     ;;
 esac
