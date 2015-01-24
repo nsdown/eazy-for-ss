@@ -251,6 +251,11 @@ function pre_install(){
    oc_wheezy_backports="n"
    fi
    
+   apt-get update
+   apt-get install -y libreadline6 libprotobuf-c0-dev libreadline5 libreadline6-dev libgmp3-dev m4 gcc pkg-config make gnutls-bin libtalloc-dev build-essential libwrap0-dev libpam0g-dev libdbus-1-dev libreadline-dev libnl-route-3-dev libpcl1-dev libopts25-dev autogen libseccomp-dev libnl-nf-3-dev debhelper
+   apt-get install -y -t wheezy-backports  libgnutls28-dev
+   
+   
    cat /etc/apt/sources.list | grep 'deb ftp://ftp.debian.org/debian/ jessie main contrib non-free' > /dev/null 2>&1
    if [ $? -ne 0 ]; then
    echo "deb ftp://ftp.debian.org/debian/ jessie main contrib non-free" >> /etc/apt/sources.list 
@@ -259,9 +264,6 @@ function pre_install(){
    
    #update dependencies
    apt-get update
-   apt-get install -y libprotobuf-c0-dev
-   apt-get install -y libreadline6 libreadline5 libreadline6-dev libgmp3-dev m4 gcc pkg-config make gnutls-bin libtalloc-dev build-essential libwrap0-dev libpam0g-dev libdbus-1-dev libreadline-dev libnl-route-3-dev libpcl1-dev libopts25-dev autogen libseccomp-dev libnl-nf-3-dev debhelper
-   apt-get install -y -t wheezy-backports  libgnutls28-dev
    apt-get install -y -t jessie  libprotobuf-c-dev libhttp-parser-dev  
    
    #if sources del
