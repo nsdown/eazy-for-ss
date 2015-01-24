@@ -70,7 +70,7 @@ function install_OpenConnect_VPN_server(){
 }
 
 function reinstall_ocserv {
-    stop_ocserv
+        stop_ocserv
 	rm -rf /etc/ocserv
 	rm -rf /usr/sbin/ocserv
 	install_OpenConnect_VPN_server
@@ -110,7 +110,7 @@ function check_Required {
 	print_info "getting ip ......"
 	apt-get update  -qq
 	apt-get install -qq -y vim sudo gawk wget curl nano sed
-    ocserv_hostname=$(wget -qO- ipv4.icanhazip.com)
+        ocserv_hostname=$(wget -qO- ipv4.icanhazip.com)
     if [ $? -ne 0 -o -z $ocserv_hostname ]; then
         ocserv_hostname=`curl -s liyangyijie.sinaapp.com/ip/`
     fi
@@ -144,8 +144,8 @@ function get_Custom_configuration(){
 
         echo "####################################"
 #Whether to make a Self-signed CA
-    print_info "Do you need make a Self-signed CA for your server?(y/n)"
-    read -p "(Default :y):" self_signed_ca
+        print_info "Do you need make a Self-signed CA for your server?(y/n)"
+        read -p "(Default :y):" self_signed_ca
 if [ "$self_signed_ca" = "n" ]; then
         print_warn "You have to put your CA and Key to /etc/ocserv !!!"
 		print_warn "You have to change your CA and Key'name to server-cert.pem and server-key.pem !!!"
@@ -193,8 +193,6 @@ else
         fqdnname=$ocserv_hostname
     fi
     print_info "Your server's FQDN:$fqdnname"
-    
-	
 fi    
     echo "####################################"    
 #set max router rulers
@@ -207,8 +205,8 @@ fi
 	echo "####################################"
 
 #which port to use
-    print_info "which port to use?"
-    read -p "(Default :$ocserv_tcpport_Default):" which_port
+        print_info "which port to use?"
+        read -p "(Default :$ocserv_tcpport_Default):" which_port
 if [ "$which_port" != "" ]; then
         ocserv_tcpport_set=$which_port
         ocserv_udpport_set=$which_port
@@ -259,7 +257,7 @@ function pre_install(){
    fi
    
    #update dependencies
-   apt-get update   
+   apt-get update
    apt-get install -y -t wheezy-backports  libgnutls28-dev
    apt-get install -y -t jessie  libprotobuf-c-dev libhttp-parser-dev
    apt-get install -y libreadline6 libreadline5 libreadline6-dev libgmp3-dev m4 gcc pkg-config make gnutls-bin libtalloc-dev build-essential libwrap0-dev libpam0g-dev libdbus-1-dev libreadline-dev libnl-route-3-dev libprotobuf-c0-dev libpcl1-dev libopts25-dev autogen libseccomp-dev libnl-nf-3-dev debhelper
@@ -275,7 +273,7 @@ function pre_install(){
    fi
    
    #keep update
-   apt-get update 
+   apt-get update
    
    print_info "dependencies  ok"
 }
@@ -349,7 +347,7 @@ cat << _EOF_ > ca.tmpl
 cn = "$caname"
 organization = "$ogname"
 serial = 1
-expiration_days = 9999
+expiration_days = 7777
 ca
 signing_key
 cert_signing_key
@@ -364,7 +362,7 @@ cat << _EOF_ > server.tmpl
 cn = "$fqdnname"
 organization = "$oname"
 serial = 2
-expiration_days = 9999
+expiration_days = 7777
 signing_key
 encryption_key
 tls_www_server
@@ -422,11 +420,10 @@ if [ ! -z "$oc_pid" ]; then
 fi
 }
 function start_ocserv(){
-if [ ! -f /etc/ocserv/server-cert.pem ] || [ ! -f /etc/ocserv/server-key.pem ]
-	then
-		print_warn "You have to put your CA and Key to /etc/ocserv !!!"
-		print_warn "You have to change your CA and Key'name to server-cert.pem and server-key.pem !!!"
-		die "CA or KEY NOT Found !!!"
+if [ ! -f /etc/ocserv/server-cert.pem ] || [ ! -f /etc/ocserv/server-key.pem ]; then
+	print_warn "You have to put your CA and Key to /etc/ocserv !!!"
+	print_warn "You have to change your CA and Key'name to server-cert.pem and server-key.pem !!!"
+	die "CA or KEY NOT Found !!!"
 fi
 
 #start
@@ -445,7 +442,7 @@ clear
 
 ps -ef | grep -v grep | grep -v ps | grep -i '/usr/sbin/ocserv' > /dev/null 2>&1
 
-if [ $? -eq 0 ];then
+if [ $? -eq 0 ]; then
     if [ "$ca_login" = "y" ]; then
 	
 	echo "test!"
