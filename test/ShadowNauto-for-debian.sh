@@ -58,9 +58,10 @@ function uninstall_ShadowVPN_libsodium(){
         #stop ss
         stop_ShadowVPN
         # restore /etc/rc.local
-        if [[ -s /opt/rc.local_bak ]]; then
-            rm -f /etc/rc.local
-            mv /opt/rc.local_bak /etc/rc.local
+        if [[ -s /opt/rc.local_bak_sv_l ]]; then
+		    sed -i "s@/usr/local/bin/shadowvpn -c /etc/shadowvpn/server.conf -s start@@" /etc/rc.local
+			rm -f /opt/rc.local_bak_sv_l
+            
         fi
         # delete config file
         rm -rf /etc/shadowvpn
@@ -92,10 +93,10 @@ fi
 function pre_install(){
    cd ~
    echo linux-image-`uname -r` hold | sudo dpkg --set-selections
-   apt-get update -y
+   apt-get update
    apt-get upgrade -y
    apt-get install -y build-essential autoconf libtool libssl-dev gcc 
-   apt-get install -y vim sudo git gawk debhelper wget curl
+   apt-get install -y vim sudo git gawk debhelper curl
    clear
 }
 
@@ -212,7 +213,7 @@ function start_ShadowVPN(){
 #Add run on system start up
 cat /etc/rc.local | grep 'shadowvpn -c /etc/shadowvpn/server.conf' > /dev/null 2>&1
 if [ $? -ne 0 ]; then
-       cp -rpf /etc/rc.local /opt/rc.local_bak
+       cp -rpf /etc/rc.local /opt/rc.local_bak_sv_l
        sed -i "/By default this script does nothing./a\/usr/local/bin/shadowvpn -c /etc/shadowvpn/server.conf -s start" /etc/rc.local
        fi
 
