@@ -15,9 +15,10 @@ echo ""
 # install Shadowsocks-libev
 function install_shadowsocks_libev(){
     root
-	debian
-	get_config
-	config_shadowsocks
+    debian
+    get_config
+    pre_install
+    config_shadowsocks
     shadowsocks_update
     show_shadowsocks    
 }
@@ -25,10 +26,10 @@ function install_shadowsocks_libev(){
 #change config
 function changeconfig_shadowsocks_libev(){
     get_config
-	config_shadowsocks
-	stop_shadowsocks
-	sudo /etc/init.d/shadowsocks-libev start
-	show_shadowsocks
+    config_shadowsocks
+    stop_shadowsocks
+    sudo /etc/init.d/shadowsocks-libev start
+    show_shadowsocks
 }
 
 #update shadowsocks-libev
@@ -178,7 +179,7 @@ function config_shadowsocks(){
  if [ ! -d /etc/shadowsocks-libev ];then
         mkdir /etc/shadowsocks-libev
  fi
-        cat > /etc/shadowsocks-libev/config.json<<-EOF
+        cat > /etc/shadowsocks-libev/config.json<<EOF
 {
     "server":"::",
     "server_port":${shadowsockspt},
@@ -208,7 +209,7 @@ fi
 function show_shadowsocks(){
 # Get IP
     IP=$(wget -qO- ipv4.icanhazip.com)
-	if [ -z $IP ]; then
+	if [ $? -ne 0 -o -z $IP ]; then
         IP=`wget -qO- liyangyijie.sinaapp.com/ip/`
         fi
 # Run success or not
