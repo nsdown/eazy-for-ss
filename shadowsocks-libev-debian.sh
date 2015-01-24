@@ -51,7 +51,7 @@ function uninstall_shadowsocks_libev(){
         #stop ss
         stop_shadowsocks
         #remove
-        apt-get remove -y shadowsocks-libev
+        apt-get remove -y -purge shadowsocks-libev
         echo "Shadowsocks-libev uninstall success!"
     else
         echo "uninstall cancelled, Nothing to do"
