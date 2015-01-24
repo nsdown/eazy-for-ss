@@ -72,6 +72,7 @@ function install_OpenConnect_VPN_server(){
 function reinstall_ocserv {
         stop_ocserv
 	rm -rf /etc/ocserv
+	rm -rf /etc/dbus-1/system.d/org.infradead.ocserv.conf
 	rm -rf /usr/sbin/ocserv
 	install_OpenConnect_VPN_server
 }
@@ -292,7 +293,8 @@ function tar_ocserv_install(){
    sed -i "s/#define MAX_CONFIG_ENTRIES 64/#define MAX_CONFIG_ENTRIES $max_router/g" src/vpn.h
    ./configure --prefix=/usr --sysconfdir=/etc && make && make install
    mkdir -p /etc/ocserv/CAforOC
-   cp doc/profile.xml /etc/ocserv   
+   cp doc/profile.xml /etc/ocserv
+   cp doc/dbus/org.infradead.ocserv.conf /etc/dbus-1/system.d/
    sed -i "s@localhost@$ocserv_hostname@g" /etc/ocserv/profile.xml
    cd ..
    rm -rf ocserv-0.8.9
