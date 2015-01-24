@@ -181,12 +181,12 @@ fi
 
 function start_shadowsocks(){
 #start
-nohup /usr/local/bin/ss-server -u -c /etc/shadowsocks-libev/config.json > /dev/null 2>&1 &
+nohup /usr/local/bin/ss-server -c /etc/shadowsocks-libev/config.json -u > /dev/null 2>&1 &
 #Add run on system start up
-cat /etc/rc.local | grep 'ss-server -u -c /etc/shadowsocks-libev/config.json' > /dev/null 2>&1
+cat /etc/rc.local | grep 'ss-server -c /etc/shadowsocks-libev/config.json -u' > /dev/null 2>&1
 if [ $? -ne 0 ]; then
        cp -rpf /etc/rc.local /opt/rc.local_bak
-       sed -i "/By default this script does nothing./a\nohup /usr/local/bin/ss-server -u -c /etc/shadowsocks-libev/config.json > /dev/null 2>&1 &" /etc/rc.local
+       sed -i "/By default this script does nothing./a\nohup /usr/local/bin/ss-server -c /etc/shadowsocks-libev/config.json -u > /dev/null 2>&1 &" /etc/rc.local
        sed -i "/By default this script does nothing./a\ulimit -n 51200" /etc/rc.local
 fi
 
