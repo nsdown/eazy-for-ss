@@ -244,7 +244,7 @@ function pre_install(){
    #keep kernel
    echo linux-image-`uname -r` hold | sudo dpkg --set-selections
    sudo apt-get upgrade -y
-   #sources check
+   #sources check, Do not change the order
    cat /etc/apt/sources.list | grep 'deb http://ftp.debian.org/debian wheezy-backports main contrib non-free' > /dev/null 2>&1
    if [ $? -ne 0 ]; then
    echo "deb http://ftp.debian.org/debian wheezy-backports main contrib non-free" >> /etc/apt/sources.list
