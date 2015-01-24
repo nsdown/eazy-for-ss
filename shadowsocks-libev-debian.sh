@@ -54,9 +54,10 @@ function uninstall_shadowsocks_libev(){
         #stop ss
         stop_shadowsocks
         # restore /etc/rc.local
-        if [[ -s /opt/rc.local_bak ]]; then
-            rm -f /etc/rc.local
-            mv /opt/rc.local_bak /etc/rc.local
+        if [[ -s /opt/rc.local_bak_ss_l ]]; then
+            rm -f /opt/rc.local_bak_ss_l
+            sed -i "s@nohup /usr/local/bin/ss-server -c /etc/shadowsocks-libev/config.json -u > /dev/null 2>&1 &@@" /etc/rc.local
+			sed -i "s@ulimit -n 51200@@" /etc/rc.local
         fi
         # delete config file
         rm -rf /etc/shadowsocks-libev
@@ -185,7 +186,7 @@ nohup /usr/local/bin/ss-server -c /etc/shadowsocks-libev/config.json -u > /dev/n
 #Add run on system start up
 cat /etc/rc.local | grep 'ss-server -c /etc/shadowsocks-libev/config.json -u' > /dev/null 2>&1
 if [ $? -ne 0 ]; then
-       cp -rpf /etc/rc.local /opt/rc.local_bak
+       cp -rpf /etc/rc.local /opt/rc.local_bak_ss_l
        sed -i "/By default this script does nothing./a\nohup /usr/local/bin/ss-server -c /etc/shadowsocks-libev/config.json -u > /dev/null 2>&1 &" /etc/rc.local
        sed -i "/By default this script does nothing./a\ulimit -n 51200" /etc/rc.local
 fi
