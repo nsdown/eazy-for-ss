@@ -293,7 +293,7 @@ function tar_ocserv_install(){
    cd ocserv-0.8.9
 #have to use "" then $ work ,set router limit
    sed -i "s/#define MAX_CONFIG_ENTRIES 64/#define MAX_CONFIG_ENTRIES $max_router/g" src/vpn.h
-   ./configure --prefix=/usr --sysconfdir=/etc && make && make install
+   ./configure --prefix=/usr --sysconfdir=/etc --with-dbus && make && make install
    mkdir -p /etc/ocserv/CAforOC
    cp doc/profile.xml /etc/ocserv
    cp doc/dbus/org.infradead.ocserv.conf /etc/dbus-1/system.d/
