@@ -156,8 +156,22 @@ function get_config(){
     if [ "$shadowsocksem" = "" ]; then
         shadowsocksem="rc4-md5"
     fi
-    echo "port:$shadowsocksem"
+    echo "encryption method:$shadowsocksem"
     echo "####################################"
+#any key go on	
+	get_char(){
+        SAVEDSTTY=`stty -g`
+        stty -echo
+        stty cbreak
+        dd if=/dev/tty bs=1 count=1 2> /dev/null
+        stty -raw
+        stty echo
+        stty $SAVEDSTTY
+    }
+    echo ""
+    echo "press any key to start...or Press Ctrl+C to cancel"
+	echo ""
+    ss_char=`get_char`
 }
 
 
