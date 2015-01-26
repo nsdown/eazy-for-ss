@@ -112,24 +112,23 @@ net.ipv4.tcp_congestion_control = $tcp_congestion_ss
 EOF
 
 sysctl -p /etc/sysctl.d/local.conf
-    
-   # Debian version 6.x.x
-	if grep ^6. /etc/debian_version > /dev/null
-	then
-		echo "deb http://shadowsocks.org/debian squeeze main" >> /etc/apt/sources.list
-		
-	fi
+   
+# Debian version 6.x.x
+if grep ^6. /etc/debian_version > /dev/null
+then
+	echo "deb http://shadowsocks.org/debian squeeze main" >> /etc/apt/sources.list
+fi
 
-	# Debian version 7.x.x
-	if grep ^7. /etc/debian_version > /dev/null
-	then
-		echo "deb http://shadowsocks.org/debian wheezy main" >> /etc/apt/sources.list
-		
-	fi
+# Debian version 7.x.x
+if grep ^7. /etc/debian_version > /dev/null
+then
+	echo "deb http://shadowsocks.org/debian wheezy main" >> /etc/apt/sources.list
+fi
 
-	wget -O- http://shadowsocks.org/debian/1D27208A.gpg | sudo apt-key add -	
+#add gpg
+wget -O- http://shadowsocks.org/debian/1D27208A.gpg | sudo apt-key add -	
 	   
-    clear
+clear
 }
 
 function get_config(){
@@ -159,18 +158,18 @@ function get_config(){
     echo "encryption method:$shadowsocksem"
     echo "####################################"
 #any key go on	
-	get_char(){
-        SAVEDSTTY=`stty -g`
-        stty -echo
-        stty cbreak
-        dd if=/dev/tty bs=1 count=1 2> /dev/null
-        stty -raw
-        stty echo
-        stty $SAVEDSTTY
-    }
+get_char(){
+    SAVEDSTTY=`stty -g`
+    stty -echo
+    stty cbreak
+    dd if=/dev/tty bs=1 count=1 2> /dev/null
+    stty -raw
+    stty echo
+    stty $SAVEDSTTY
+}
     echo ""
     echo "press any key to start...or Press Ctrl+C to cancel"
-	echo ""
+    echo ""
     ss_char=`get_char`
 }
 
@@ -191,7 +190,7 @@ sudo /etc/init.d/shadowsocks-libev restart
 function config_shadowsocks(){
 # set config 
  if [ ! -d /etc/shadowsocks-libev ];then
-        mkdir /etc/shadowsocks-libev
+    mkdir /etc/shadowsocks-libev
  fi
         cat > /etc/shadowsocks-libev/config.json<<EOF
 {
