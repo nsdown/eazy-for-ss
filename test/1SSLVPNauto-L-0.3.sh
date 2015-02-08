@@ -238,14 +238,15 @@ function get_Custom_configuration(){
     print_info "$max_router"
     echo "####################################"
 #which port to use, and upd-port + 1 选择验证端口，自定义后，udp端口数为+1
-    print_info "Which port to use?"
+    print_info "Which port to use for verification?(Tcp-Port)"
     read -p "(Default :$ocserv_tcpport_Default):" which_port
     if [ "$which_port" != "" ]; then
         ocserv_tcpport_set=$which_port
-        ocserv_udpport_set=`expr $which_por + 1`
-        print_info "Your Port Is:$which_port"
+        ocserv_udpport_set=`expr $which_port + 1`
+        print_info "Your Tcp-Port Is:$ocserv_tcpport_set"
+        print_info "Your Udp-Port Is:$ocserv_udpport_set"
     else
-         print_info "Your Port Is:$ocserv_tcpport_Default"
+        print_info "Your Tcp-Port Is:$ocserv_tcpport_Default"
     fi
     echo "####################################"
 #boot from the start 是否开机自起
@@ -318,21 +319,6 @@ function pre_install(){
 #keep kernel 防止某些情况下内核升级
     echo linux-image-`uname -r` hold | sudo dpkg --set-selections
     apt-get upgrade -y
-##no update from test sources 将测试源优先级调低 防止其他测试包安装
-#    if [ ! -d /etc/apt/preferences.d ];then
-#        mkdir /etc/apt/preferences.d
-#    fi
-#    cat > /etc/apt/preferences.d/my_ocserv_preferences<<EOF
-#Package: *
-#Pin: release wheezy
-#Pin-Priority: 900
-#Package: *
-#Pin: release wheezy-backports
-#Pin-Priority: 90
-#Package: *
-#Pin: release jessie
-#Pin-Priority: 60
-#EOF
 #sources check, Do not change the order 不要轻易改变升级顺序
     cat /etc/apt/sources.list | grep 'deb http://ftp.debian.org/debian wheezy-backports main contrib non-free' > /dev/null 2>&1
     if [ $? -ne 0 ]; then
@@ -345,10 +331,6 @@ function pre_install(){
     apt-get install -y -t wheezy-backports  libgnutls28-dev 
 #sources check @ check Required 源检测在前面
     echo "deb ftp://ftp.debian.org/debian/ jessie main contrib non-free" >> /etc/apt/sources.list
-##update dependencies too new ~
-#    apt-get update
-#    apt-get install -y -t jessie  libprotobuf-c-dev libhttp-parser-dev
-#    apt-get install -y -qq -t jessie  libprotobuf-c-dev libhttp-parser-dev
 #if sources del 如果本来没有测试源便删除
     if [ "$oc_wheezy_backports" = "n" ]; then
         sed -i '#deb http://ftp.debian.org/debian wheezy-backports main contrib non-free#d' /etc/apt/sources.list
@@ -357,7 +339,6 @@ function pre_install(){
         sed -i '#deb ftp://ftp.debian.org/debian/ jessie main contrib non-free#d' /etc/apt/sources.list
     fi
 #keep update
-#    rm -rf /etc/apt/preferences.d/my_ocserv_preferences
     apt-get update
     print_info "Dependencies  ok"
 }
@@ -473,11 +454,11 @@ function set_ocserv_conf(){
     if [ "$ocserv_boot_start" = "" ]; then
         sudo insserv ocserv
     fi
-#add a user
+#add a user 增加一个初始用户
     if [ "$ca_login" = "" ]; then
     (echo "$password"; sleep 1; echo "$password") | ocpasswd -c "/etc/ocserv/ocpasswd" $username
     fi
-#set only tcp-port
+#set only tcp-port 仅仅使用tcp端口
     if [ "$only_tcp_port" = "y" ]; then
         sed -i 's@udp-port = @#udp-port = @g' /etc/ocserv/ocserv.conf
         #use '' not ""
