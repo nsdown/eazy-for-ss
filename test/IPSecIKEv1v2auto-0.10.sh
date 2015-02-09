@@ -287,7 +287,7 @@ EOF
 # Configuration changes should be made in the included files
 
 charon {
-	load_modular = yes
+    load_modular = yes
     duplicheck.enable = no
     dns1 = 8.8.8.8
     dns2 = 8.8.4.4
