@@ -184,6 +184,7 @@ function add_a_user(){
 
 #make a self-signd ca 制作自签证书 客户端登录使用证书
 function make_IPSecIKEv1v2_ca(){
+    print_info "Making CA ..."
 #CREATE YOUR CERTIFICATION AUTHORITY (CA)
     cd /etc/ipsec.d/
     ipsec pki --gen --type rsa --size 4096 --outform pem > private/strongswanKey.pem
@@ -203,6 +204,7 @@ function make_IPSecIKEv1v2_ca(){
     mv Client.p12 /root/
     cp cacerts/strongswanCert.pem /root/
     cp certs/ClientCert.pem /root/
+    print_info "CA OK"
 }
 
 function get_p12_ca(){
@@ -374,6 +376,7 @@ EOF
     sed -i '/give the proper signal to stop/a\. /etc/ipsec.d/stop-ipsec-sysctl.sh' /etc/init.d/ipsec
 #boot from the start 开机自启
     sudo insserv ipsec
+    print_info "set OK"
 }
 
 
