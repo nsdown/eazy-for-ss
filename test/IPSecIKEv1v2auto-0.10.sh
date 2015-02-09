@@ -221,7 +221,7 @@ config setup
     uniqueids=never
     charondebug="cfg 2, dmn 2, ike 2, net 2"
 
-#default for all 只需要设定一次默认设定 其他都会取用
+#default for all 
 conn %default
     ikelifetime=24h
     ike=aes128-sha256-ecp256,aes256-sha384-ecp384,aes128-sha256-modp2048,aes128-sha1-modp2048,aes256-sha384-modp4096,aes256-sha256-modp4096,aes256-sha1-modp4096,aes128-sha256-modp1536,aes128-sha1-modp1536,aes256-sha384-modp2048,aes256-sha256-modp2048,aes256-sha1-modp2048,aes128-sha256-modp1024,aes128-sha1-modp1024,aes256-sha384-modp1536,aes256-sha256-modp1536,aes256-sha1-modp1536,aes256-sha384-modp1024,aes256-sha256-modp1024,aes256-sha1-modp1024!
@@ -239,14 +239,14 @@ conn %default
     rightsourceip=10.89.32.0/24
 
 # compatible with "strongSwan VPN Client" for Android 4.0+
-# and Windows 7 cert mode. 供安卓客户端和win7证书模式使用
+# and Windows 7 cert mode. 
 conn networkmanager-strongswan
     keyexchange=ikev2
     leftauth=pubkey
     rightauth=pubkey
     auto=add
 
-# for win esp mode 供win7-esp密码模式使用   
+# for win esp mode 
 conn windows_eap
     keyexchange=ikev2
     ike=aes256-sha1-modp1024!
@@ -259,7 +259,7 @@ conn windows_eap
     eap_identity=%any
     auto=add
 
-# for ios cert mode. 供IOS证书模式使用
+# for ios cert mode. 
 conn iOS_cert
     keyexchange=ikev1
     # strongswan version >= 5.0.2, compatible with iOS 6.0,6.0.1
@@ -270,7 +270,7 @@ conn iOS_cert
     rightauth2=xauth
     auto=add
 
-# for psk mode 供IOS 安卓 PSK模式使用    
+# for psk mode 
 conn ios_android_xauth_psk
     keyexchange=ikev1
     leftauth=psk
