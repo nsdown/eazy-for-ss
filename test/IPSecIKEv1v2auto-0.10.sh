@@ -144,7 +144,7 @@ function deb_install(){
     apt-get install -y -t wheezy-backports strongswan libcharon-extra-plugins 
 #if sources del 如果本来没有测试源便删除
     if [ "$ic_backports" = "n" ]; then
-        sed -i 's@deb http://ftp.debian.org/debian wheezy-backports main@@g' /etc/apt/sources.list
+        sed -i '#deb http://ftp.debian.org/debian wheezy-backports main#d' /etc/apt/sources.list
     fi
 #keep update
     apt-get update
