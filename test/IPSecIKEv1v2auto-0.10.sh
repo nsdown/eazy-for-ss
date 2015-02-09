@@ -174,11 +174,11 @@ function add_a_user(){
 #get psk,3 figures default
     Default_psk=$(get_random_word 3)
     print_info "Input your psk for IPSecIKEv1v2:"
-    read -p "(Default :$DeDefault_psk):" psk
+    read -p "(Default :$Default_psk):" psk
     if [ "$psk" = "" ]; then
         psk="$Default_psk"
     fi
-    print_info "Your psk:$Default_psk"
+    print_info "Your psk:$psk"
     echo "####################################"
 }
 
