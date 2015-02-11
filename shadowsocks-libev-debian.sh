@@ -176,7 +176,11 @@ get_char(){
 
 function shadowsocks_update(){
 
+echo linux-image-`uname -r` hold | sudo dpkg --set-selections
+
 sudo apt-get update
+
+apt-get upgrade -y
    
 sudo apt-get install shadowsocks-libev -y
 
