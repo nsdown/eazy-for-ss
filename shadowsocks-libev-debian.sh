@@ -196,9 +196,10 @@ function config_shadowsocks(){
  if [ ! -d /etc/shadowsocks-libev ];then
     mkdir /etc/shadowsocks-libev
  fi
+#:: not wort only 0.0.0.0
         cat > /etc/shadowsocks-libev/config.json<<EOF
 {
-    "server":"::",
+    "server":"0.0.0.0",
     "server_port":${shadowsockspt},
     "password":"${shadowsockspwd}",
     "timeout":600,
