@@ -182,7 +182,7 @@ sudo apt-get update
 
 apt-get upgrade -y
    
-sudo apt-get install shadowsocks-libev -y
+sudo apt-get install shadowsocks-libev -y --force-yes
 
 N_MAXFD=`cat /etc/default/shadowsocks-libev | grep '^MAXFD' | sed 's/MAXFD=//g'`
 sed -i "s@MAXFD=$N_MAXFD@MAXFD=51200@" /etc/default/shadowsocks-libev
