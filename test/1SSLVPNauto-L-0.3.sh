@@ -131,7 +131,7 @@ function check_Required {
 #get IPv4 info,install tools 
     print_info "Getting ip and base-tools from net......"
     apt-get update  -qq
-    apt-get install -qq -y vim sudo gawk curl nano sed
+    apt-get install -qq -y vim sudo gawk curl nano sed insserv
     ocserv_hostname=$(wget -qO- ipv4.icanhazip.com)
     if [ $? -ne 0 -o -z $ocserv_hostname ]; then
         ocserv_hostname=`curl -s liyangyijie.sinaapp.com/ip/`
