@@ -1,7 +1,7 @@
 #! /bin/bash
 
 #===============================================================================================
-#   System Required:  Only Debian 7+!!!
+#   System Required:  Debian 7+
 #   Description:  Install OpenConnect VPN server for Debian
 #   SSLVPNauto-L v0.3 For Debian Copyright (C) liyangyijie@Gmail released under GNU GPLv2
 #   SSLVPNauto-L v0.3 Is Based On SSLVPNauto v0.1-A1
@@ -57,12 +57,12 @@ function install_OpenConnect_VPN_server(){
     tar_ocserv_install
 
 #make self-signd server-ca 制作服务器自签名证书	
-    if [ "$self_signed_ca" = "" ]; then
+    if [ "$self_signed_ca" = "y" ]; then
     make_ocserv_ca
     fi
 
-#test 证书登录 测试中	
-    if [ "$ca_login" = "y" ]; then
+#make a client cert 制作证书登录	
+    if [ "$ca_login" = "y" ] && [ "$self_signed_ca" = "y" ]; then
     ca_login_ocserv	
     fi
 
@@ -73,7 +73,7 @@ function install_OpenConnect_VPN_server(){
     stop_ocserv
 
 #no certificate,no start 没有服务器证书不启动	
-    if [ "$self_signed_ca" = "" ]; then	
+    if [ "$self_signed_ca" = "y" ]; then	
     start_ocserv
     fi
 
@@ -103,15 +103,15 @@ function check_Required {
         die "Looks like you aren't running this installer on a Debian-based system"
     fi
     print_info "Debian ok"
-#only Debian 7+!!!
+#only Debian 7+
     if grep ^6. /etc/debian_version > /dev/null
     then
-        die "Your system is debian 6. Only for Debian 7+!!!"
+        die "Your system is debian 6. Only for Debian 7+"
     fi
 	
     if grep ^5. /etc/debian_version > /dev/null
     then
-        die "Your system is debian 5. Only for Debian 7+!!!"
+        die "Your system is debian 5. Only for Debian 7+"
     fi
     print_info "Debian version ok"
 #check install 防止重复安装
@@ -121,22 +121,22 @@ function check_Required {
     fi
     print_info "Not installed ok"
 #sources check,del test sources 去掉测试源 
-    cat /etc/apt/sources.list | grep 'deb ftp://ftp.debian.org/debian/ jessie main contrib non-free' > /dev/null 2>&1
+    cat /etc/apt/sources.list | grep 'deb ftp://ftp.debian.org/debian/ jessie main' > /dev/null 2>&1
     if [ $? -ne 0 ]; then
         oc_jessie="n"
      else
-        sed -i '#deb ftp://ftp.debian.org/debian/ jessie main contrib non-free#d' /etc/apt/sources.list
+        sed -i '#deb ftp://ftp.debian.org/debian/ jessie main#d' /etc/apt/sources.list
     fi
     print_info "Sources ok"
 #get IPv4 info,install tools 
-    print_info "Getting ip from net......"
+    print_info "Getting ip and base-tools from net......"
     apt-get update  -qq
     apt-get install -qq -y vim sudo gawk curl nano sed
     ocserv_hostname=$(wget -qO- ipv4.icanhazip.com)
     if [ $? -ne 0 -o -z $ocserv_hostname ]; then
         ocserv_hostname=`curl -s liyangyijie.sinaapp.com/ip/`
     fi
-    print_info "Get ip ok"
+    print_info "Get ip and base-tools ok"
 #get default port 从网络配置中获取默认使用端口
     print_info "Getting default port from net......"
     ocserv_tcpport_Default=$(wget -qO- --no-check-certificate https://raw.githubusercontent.com/fanyueciyuan/useful/master/ocservauto/ocserv.conf | grep '^tcp-port' | sed 's/tcp-port = //g')
@@ -193,7 +193,7 @@ function get_Custom_configuration(){
         fi
             print_info "Your own domain for ocserv:$fqdnname"
     else 
-        self_signed_ca=""
+        self_signed_ca="y"
         print_info "Make a Self-signed CA"
         echo "####################################"
 #get CA's name
@@ -247,6 +247,7 @@ function get_Custom_configuration(){
         print_info "Your Udp-Port Is:$ocserv_udpport_set"
     else
         print_info "Your Tcp-Port Is:$ocserv_tcpport_Default"
+        print_info "Your Udp-Port Is:$ocserv_udpport_Default"
     fi
     echo "####################################"
 #boot from the start 是否开机自起
@@ -256,7 +257,7 @@ function get_Custom_configuration(){
         ocserv_boot_start="n"
         print_info "Do not start with the system!"	
     else
-        ocserv_boot_start=""
+        ocserv_boot_start="y"
         print_info "Boot from the start!"
     fi
     echo "####################################"
@@ -267,7 +268,7 @@ function get_Custom_configuration(){
         only_tcp_port="y"
         print_info "Only tcp-port model!"	
     else
-        only_tcp_port=""
+        only_tcp_port="n"
         print_info "Tcp-udp model!"
     fi
     echo "####################################"
@@ -276,15 +277,10 @@ function get_Custom_configuration(){
     read -p "(Default :n):" ca_login 
     if [ "$ca_login" = "y" ]; then
 #ca login support~
-#    print_warn "You can get userCA from /etc/ocserv/UserCa !!!"
-#    print_warn "NEXT you have to input your username! "
-#ca login is not support~
-        print_warn "Sorry,ca login is not support,now!"
-        print_warn "We have to choose the plain login!"
-        print_warn "The username and password are necessary!"
-        ca_login=""
+        print_warn "You can get user.p12 from /root !!!"
+        print_warn "NEXT you have to input a password for you client cert! "
     else
-        ca_login=""
+        ca_login="n"
         print_info "The plain login."
     fi
     echo "####################################"
@@ -293,18 +289,29 @@ function get_Custom_configuration(){
 #add a user 增加一个初始用户
 function add_a_user(){
 #get username,4 figures default
-    Default_username=$(get_random_word 4)
-    print_info "Input your username for ocserv:"
-    read -p "(Default :$Default_username):" username
-    if [ "$username" = "" ]; then
-        username="$Default_username"
-    fi
-    print_info "Your username:$username"
-    echo "####################################"
-#get password,if not ca login,6 figures default
-    if [ "$ca_login" = "" ]; then
+    if [ "$ca_login" = "n" ]; then
+        Default_username=$(get_random_word 4)
+        print_info "Input your username for ocserv:"
+        read -p "(Default :$Default_username):" username
+        if [ "$username" = "" ]; then
+            username="$Default_username"
+        fi
+        print_info "Your username:$username"
+        echo "####################################"
+#get password,6 figures default
         Default_password=$(get_random_word 6)
         print_info "Input your password for ocserv:"
+        read -p "(Default :$Default_password):" password
+        if [ "$password" = "" ]; then
+            password="$Default_password"
+        fi
+        print_info "Your password:$password"
+        echo "####################################"
+    fi
+#get password,if ca login,4 figures default
+    if [ "$ca_login" = "y" ] && [ "$self_signed_ca" = "y" ]; then
+        Default_password=$(get_random_word 4)
+        print_info "Input your password for your p12-cert file:"
         read -p "(Default :$Default_password):" password
         if [ "$password" = "" ]; then
             password="$Default_password"
@@ -320,7 +327,7 @@ function pre_install(){
     echo linux-image-`uname -r` hold | sudo dpkg --set-selections
     apt-get upgrade -y
 #sources check, Do not change the order 不要轻易改变升级顺序
-    cat /etc/apt/sources.list | grep 'deb http://ftp.debian.org/debian wheezy-backports main contrib non-free' > /dev/null 2>&1
+    cat /etc/apt/sources.list | grep 'deb http://ftp.debian.org/debian wheezy-backports main' > /dev/null 2>&1
     if [ $? -ne 0 ]; then
         echo "deb http://ftp.debian.org/debian wheezy-backports main contrib non-free" >> /etc/apt/sources.list
         oc_wheezy_backports="n"
@@ -432,11 +439,29 @@ _EOF_
         die "CA or KEY NOT Found , make failure!"
     fi
     cp server-cert.pem /etc/ocserv/ && cp server-key.pem /etc/ocserv/
+
     print_info "Self-signed CA for ocserv ok"
 }
 
 function ca_login_ocserv(){
-    print_warn "CA_Login DO NOT support"
+#make a client cert
+    cd /etc/ocserv/CAforOC
+    cat << _EOF_ > user.tmpl
+cn = "Client ocserv"
+unit = "Client ocserv"
+expiration_days = 7777
+signing_key
+tls_www_client
+_EOF_
+#user key
+    certtool --generate-privkey --outfile user-key.pem
+#user cert
+    certtool --generate-certificate --load-privkey user-key.pem --load-ca-certificate ca-cert.pem --load-ca-privkey ca-key.pem --template user.tmpl --outfile user-cert.pem
+#p12
+    openssl pkcs12 -export -inkey user-key.pem -in user-cert.pem -certfile ca-cert.pem -out user.p12 -passout pass:$password
+#cp and mv
+    mv user.p12 /root/
+    cp ca-cert.pem /etc/ocserv/
 }
 
 #set 设定相关参数
@@ -451,24 +476,27 @@ function set_ocserv_conf(){
 #default domain 
     sed -i "s@#default-domain = example.com@default-domain = $fqdnname@" /etc/ocserv/ocserv.conf 
 #boot from the start 开机自启
-    if [ "$ocserv_boot_start" = "" ]; then
+    if [ "$ocserv_boot_start" = "y" ]; then
         sudo insserv ocserv
     fi
 #add a user 增加一个初始用户
-    if [ "$ca_login" = "" ]; then
+    if [ "$ca_login" = "n" ]; then
     (echo "$password"; sleep 1; echo "$password") | ocpasswd -c "/etc/ocserv/ocpasswd" $username
     fi
 #set only tcp-port 仅仅使用tcp端口
     if [ "$only_tcp_port" = "y" ]; then
         sed -i 's@udp-port = @#udp-port = @g' /etc/ocserv/ocserv.conf
         #use '' not ""
-        sed -i 's@iptables -A INPUT -p udp --dport $ocserv_udpport -m comment --comment "$gw_intf2 (ocserv4)" -j ACCEPT@echo ""@' etc/ocserv/start-ocserv-sysctl.sh 
-        sed -i 's@iptables -D INPUT -p udp --dport@#iptables -D INPUT -p udp --dport@' etc/ocserv/stop-ocserv-sysctl.sh 
+        sed -i 's@ocserv_udpport=`cat /@#ocserv_udpport=`cat /@' etc/ocserv/start-ocserv-sysctl.sh
+        sed -i 's@iptables -A INPUT -p udp --dport@#iptables -A INPUT -p udp --dport@' etc/ocserv/start-ocserv-sysctl.sh
+        sed -i '/"$gw_intf2 (ocserv4)" -j ACCEPT/a\echo ""' etc/ocserv/start-ocserv-sysctl.sh
+#        sed -i 's@iptables -A INPUT -p udp --dport $ocserv_udpport -m comment --comment "$gw_intf2 (ocserv4)" -j ACCEPT@echo ""@' etc/ocserv/start-ocserv-sysctl.sh
     fi
 #set ca_login
     if [ "$ca_login" = "y" ]; then
         sed -i 's@auth = "plain[/etc/ocserv/ocpasswd]"@#auth = "plain[/etc/ocserv/ocpasswd]"@g' /etc/ocserv/ocserv.conf
         sed -i 's@#auth = "certificate"@auth = "certificate"@' /etc/ocserv/ocserv.conf
+        sed -i 's@#ca-cert = /path/to/ca.pem@ca-cert = /etc/ocserv/ca-cert.pem@' /etc/ocserv/ocserv.conf
     fi
     print_info "Set ocserv ok"
 }
@@ -505,8 +533,15 @@ function show_ocserv(){
     ps -ef | grep -v grep | grep -v ps | grep -i '/usr/sbin/ocserv' > /dev/null 2>&1
     if [ $? -eq 0 ]; then
         if [ "$ca_login" = "y" ]; then
-            echo "test!"
-            echo "test!"
+            echo ""
+            echo -e "\033[41;37m Your server domain is \033[0m" "$fqdnname:$ocserv_port"
+            echo -e "\033[41;37m Your p12-cert's password is \033[0m" "$password"
+            print_warn " You have to import the certificate to your device at first."
+            print_warn " You can stop ocserv by ' /etc/init.d/ocserv stop '!"
+            print_warn " Boot from the start or not, use ' sudo insserv ocserv ' or ' sudo insserv -r ocserv '."
+            echo ""    
+            print_info " Enjoy it!"
+            echo ""
         else
             echo ""
             echo -e "\033[41;37m Your server domain is \033[0m" "$fqdnname:$ocserv_port"
@@ -519,7 +554,7 @@ function show_ocserv(){
             print_info " Enjoy it!"
             echo ""
         fi
-    elif [ "$self_signed_ca" = "n" -a "$ca_login" = "" ]; then    
+    elif [ "$self_signed_ca" = "n" -a "$ca_login" = "n" ]; then    
         print_warn " 1,You have to change your CA and Key'name to server-cert.pem and server-key.pem !!!"
         print_warn " 2,You have to put your CA and Key to /etc/ocserv !!!"
         print_warn " 3,You have to start ocserv by ' /etc/init.d/ocserv start '!"
@@ -527,9 +562,12 @@ function show_ocserv(){
         print_warn " 5,Boot from the start or not, use ' sudo insserv ocserv ' or ' sudo insserv -r ocserv '."
         echo -e "\033[41;37m Your username is \033[0m" "$username"
         echo -e "\033[41;37m Your password is \033[0m" "$password"
-    elif [ "$self_signed_ca" = "n" -a "$ca_login" = "y" ]; then  
-        echo "test 2"
-        echo "test 2"
+    elif [ "$self_signed_ca" = "n" -a "$ca_login" = "y" ]; then
+        print_warn " 1,You have to change your Server Certificates and Server Key's name to server-cert.pem and server-key.pem !!!"
+        print_warn " 2,You have to change your Certificate Authority Certificates' name to ca-cert.pem!!!"
+        print_warn " 3,You have to put them to /etc/ocserv !!!"
+        print_warn " 4,You have to start ocserv by ' /etc/init.d/ocserv start '!"
+        print_warn " 5,Boot from the start or not, use ' sudo insserv ocserv ' or ' sudo insserv -r ocserv '."
     else
         print_warn "Ocserv start failure,ocserv is offline!"	
     fi
