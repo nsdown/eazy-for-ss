@@ -1,14 +1,14 @@
 #! /bin/bash
 
 #===============================================================================================
-#   System Required:  Debian/Ubuntu (32bit/64bit)
-#   Description:  Install Shadowsocks(libev) for Debian/Ubuntu
+#   System Required:  Debian (32bit/64bit)
+#   Description:  Install Shadowsocks(libev) for Debian 6 7
 #   
 #===============================================================================================
 
 clear
 echo "#############################################################"
-echo "# Install Shadowsocks(libev) for Debian/Ubuntu (32bit/64bit)"
+echo "# Install Shadowsocks(libev) for Debian (32bit/64bit)"
 echo "#############################################################"
 echo ""
 
