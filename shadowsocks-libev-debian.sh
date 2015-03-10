@@ -52,7 +52,7 @@ function uninstall_shadowsocks_libev(){
         stop_shadowsocks
         #remove
         rm -rf /etc/sysctl.d/local_ss.conf
-        apt-get remove -y -purge shadowsocks-libev
+        apt-get remove -y --purge shadowsocks-libev
         echo "Shadowsocks-libev uninstall success!"
     else
         echo "uninstall cancelled, Nothing to do"
