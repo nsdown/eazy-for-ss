@@ -34,8 +34,8 @@ function changeconfig_shadowsocks_libev(){
 
 #update shadowsocks-libev
 function update_shadowsocks_libev(){
-	stop_shadowsocks
-	shadowsocks_update
+    stop_shadowsocks
+    shadowsocks_update
 	
 }
 
@@ -51,6 +51,7 @@ function uninstall_shadowsocks_libev(){
         #stop ss
         stop_shadowsocks
         #remove
+        rm -rf /etc/sysctl.d/local_ss.conf
         apt-get remove -y -purge shadowsocks-libev
         echo "Shadowsocks-libev uninstall success!"
     else
@@ -85,7 +86,7 @@ else
 tcp_congestion_ss="cubic"
 fi
 
-cat > /etc/sysctl.d/local.conf<<EOF
+cat > /etc/sysctl.d/local_ss.conf<<EOF
 
 fs.file-max = 51200
 
@@ -111,7 +112,7 @@ net.ipv4.tcp_mtu_probing = 1
 net.ipv4.tcp_congestion_control = $tcp_congestion_ss
 EOF
 
-sysctl -p /etc/sysctl.d/local.conf
+sysctl -p /etc/sysctl.d/local_ss.conf
    
 # Debian version 6.x.x
 if grep ^6. /etc/debian_version > /dev/null
@@ -182,7 +183,7 @@ sudo apt-get update
 
 apt-get upgrade -y
    
-sudo apt-get install shadowsocks-libev -y --force-yes
+sudo apt-get install shadowsocks-libev -y 
 
 N_MAXFD=`cat /etc/default/shadowsocks-libev | grep '^MAXFD' | sed 's/MAXFD=//g'`
 sed -i "s@MAXFD=$N_MAXFD@MAXFD=51200@" /etc/default/shadowsocks-libev
