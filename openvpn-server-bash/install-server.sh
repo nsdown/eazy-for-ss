@@ -82,7 +82,8 @@ echo "Generating config files from template..."
 pushd `dirname $0` >/dev/null
 sed -i "s/vpn.lug.ustc.edu.cn/$hostname/g" client.conf server.conf
 sed -i "s/10.8.0.0/$virtnet/g" client.conf server.conf
-dns=$(echo $virtnet | awk 'BEGIN{FS="."}{print $1 "." $2 "." $3 "." $4+1}')
+dns=8.8.4.4
+#dns=$(echo $virtnet | awk 'BEGIN{FS="."}{print $1 "." $2 "." $3 "." $4+1}')
 sed -i "s/10.8.0.1/$dns/g" client.conf server.conf
 cp server.conf $CONF
 popd >/dev/null
@@ -101,10 +102,10 @@ INIT_COMMAND="iptables -t nat -A POSTROUTING -s $virtnet/16 -j MASQUERADE"
 eval $INIT_COMMAND
 
 # dnsmasq for push DNS server
-if ! command -v "dnsmasq"; then
-    echo "DNSmasq not installed, installing..."
-    apt-get install dnsmasq
-fi
+#if ! command -v "dnsmasq"; then
+#   echo "DNSmasq not installed, installing..."
+#   apt-get install dnsmasq
+#fi
 
 echo "====== DONE ======"
 echo "You need to add the following command to init script (e.g. /etc/rc.local)"
