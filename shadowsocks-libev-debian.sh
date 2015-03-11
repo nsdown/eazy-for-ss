@@ -77,7 +77,10 @@ fi
 
 # pre_install
 function pre_install(){
-
+#base-tool
+apt-get update
+apt-get upgrade -y
+apt-get install -y sudo nano sed vim gawk curl
 #tcp choice
 sysctl net.ipv4.tcp_available_congestion_control | grep 'hybla' > /dev/null 2>&1
 if [ $? -eq 0 ]; then 
@@ -181,8 +184,6 @@ echo linux-image-`uname -r` hold | sudo dpkg --set-selections
 
 sudo apt-get update
 
-apt-get upgrade -y
-   
 sudo apt-get install shadowsocks-libev -y 
 
 N_MAXFD=`cat /etc/default/shadowsocks-libev | grep '^MAXFD' | sed 's/MAXFD=//g'`
