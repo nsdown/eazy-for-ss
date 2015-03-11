@@ -486,11 +486,6 @@ function set_ocserv_conf(){
 #set only tcp-port 仅仅使用tcp端口
     if [ "$only_tcp_port" = "y" ]; then
         sed -i 's@udp-port = @#udp-port = @g' /etc/ocserv/ocserv.conf
-        #use '' not ""
-        sed -i 's@ocserv_udpport=`cat /@#ocserv_udpport=`cat /@' etc/ocserv/start-ocserv-sysctl.sh
-        sed -i 's@iptables -A INPUT -p udp --dport@#iptables -A INPUT -p udp --dport@' etc/ocserv/start-ocserv-sysctl.sh
-        sed -i '/"$gw_intf2 (ocserv4)" -j ACCEPT/a\echo ""' etc/ocserv/start-ocserv-sysctl.sh
-#        sed -i 's@iptables -A INPUT -p udp --dport $ocserv_udpport -m comment --comment "$gw_intf2 (ocserv4)" -j ACCEPT@echo ""@' etc/ocserv/start-ocserv-sysctl.sh
     fi
 #set ca_login
     if [ "$ca_login" = "y" ]; then
