@@ -15,6 +15,6 @@ bash ocservauto.sh
 ##LICENCE
 SSLVPNauto-L For Debian Copyright (C) liyangyijie@Gmail released under GNU GPLv2
 
-SLVPNauto-L Is Based On SSLVPNauto v0.1-A1
+SSLVPNauto-L Is Based On SSLVPNauto v0.1-A1
 
 SSLVPNauto For Debian Copyright (C) Alex Fang frjalex@gmail.com released under GNU GPLv2
