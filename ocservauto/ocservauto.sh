@@ -1,10 +1,10 @@
 #! /bin/bash
 
 #===============================================================================================
-#   System Required:  Only Debian 7+!!!
+#   System Required:  Only Debian 7+
 #   Description:  Install OpenConnect VPN server for Debian
-#   SSLVPNauto-L v0.2 For Debian Copyright (C) liyangyijie@Gmail released under GNU GPLv2
-#   SSLVPNauto-L v0.2 Is Based On SSLVPNauto v0.1-A1
+#   Ocservauto For Debian Copyright (C) liyangyijie released under GNU GPLv2
+#   Ocservauto For Debian Is Based On SSLVPNauto v0.1-A1
 #   SSLVPNauto v0.1-A1 For Debian Copyright (C) Alex Fang frjalex@gmail.com released under GNU GPLv2
 #   
 #===============================================================================================
