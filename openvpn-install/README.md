@@ -10,6 +10,8 @@ Run the script and follow the assistant:
 
 Once it ends, you can run it again to add more users, remove some of them or even completely uninstall OpenVPN.
 
+Your client files at ~/*.ovpn
+
 ###Forked From
 https://github.com/Nyr/openvpn-install.git
 
