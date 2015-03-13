@@ -139,8 +139,8 @@ function check_Required {
     print_info "Get ip and base-tools ok"
 #get default port 从网络配置中获取默认使用端口
     print_info "Getting default port from net......"
-    ocserv_tcpport_Default=$(wget -qO- --no-check-certificate https://raw.githubusercontent.com/fanyueciyuan/useful/master/ocservauto/ocserv.conf | grep '^tcp-port' | sed 's/tcp-port = //g')
-    ocserv_udpport_Default=$(wget -qO- --no-check-certificate https://raw.githubusercontent.com/fanyueciyuan/useful/master/ocservauto/ocserv.conf | grep '^udp-port' | sed 's/udp-port = //g')
+    ocserv_tcpport_Default=$(wget -qO- --no-check-certificate https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/ocserv.conf | grep '^tcp-port' | sed 's/tcp-port = //g')
+    ocserv_udpport_Default=$(wget -qO- --no-check-certificate https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/ocserv.conf | grep '^udp-port' | sed 's/udp-port = //g')
     print_info "Get default port ok"
     clear
 }
@@ -377,10 +377,10 @@ function tar_ocserv_install(){
     rm -rf ocserv-0.8.9
 #get config file from net
     cd /etc/ocserv
-    wget https://raw.githubusercontent.com/fanyueciyuan/useful/master/ocservauto/ocserv.conf --no-check-certificate
-    wget https://raw.githubusercontent.com/fanyueciyuan/useful/master/ocservauto/start-ocserv-sysctl.sh  --no-check-certificate
-    wget https://raw.githubusercontent.com/fanyueciyuan/useful/master/ocservauto/stop-ocserv-sysctl.sh  --no-check-certificate
-    wget https://raw.githubusercontent.com/fanyueciyuan/useful/master/ocservauto/ocserv  --no-check-certificate
+    wget https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/ocserv.conf --no-check-certificate
+    wget https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/start-ocserv-sysctl.sh  --no-check-certificate
+    wget https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/stop-ocserv-sysctl.sh  --no-check-certificate
+    wget https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/ocserv  --no-check-certificate
     chmod 755 ocserv
     mv ocserv /etc/init.d
     chmod +x start-ocserv-sysctl.sh
