@@ -1,6 +1,8 @@
-eazy-for-ss
-===========
-简单私用shadow系列一键脚本~~
-===========
-oneclick for shadow series
-===========
+#Eazy-For-SS
+
+Eazy-For-SS is a Tools and Profiles Collection,which may help you bypass the Great Firewall of China.
+
+
+
+
+
