@@ -13,6 +13,7 @@ bash ocservauto.sh
 ```
 
 Profiles in /etc/ocserv/
+
 When you change the profiles,restart the vpn server.
 ```shell
 /etc/init.d/ocserv restart
