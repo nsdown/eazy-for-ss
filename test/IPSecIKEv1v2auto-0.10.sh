@@ -3,7 +3,7 @@
 #===============================================================================================
 #   System Required:  Debian 7+
 #   Description:  Install IPSecIKEv1v2 VPN server for Debian by strongSwan 5
-#   ipsecIKEv1v2auto-0.1 For Debian Copyright (C) liyangyijie@Gmail released under GNU GPLv2
+#   ipsecIKEv1v2auto-0.1 For Debian Copyright (C) liyangyijie released under GNU GPLv2
 #===============================================================================================
 
 clear
