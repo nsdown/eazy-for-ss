@@ -31,6 +31,8 @@ function install_OpenConnect_VPN_server(){
     get_Custom_configuration
     else
     print_info "Automatic installation."
+    self_signed_ca="y"
+    ca_login="n"    
     fi
 
 #add a user 增加初始用户
@@ -123,9 +125,9 @@ function check_Required {
 #sources check,del test sources 去掉测试源 
     cat /etc/apt/sources.list | grep 'deb ftp://ftp.debian.org/debian/ jessie main' > /dev/null 2>&1
     if [ $? -ne 0 ]; then
-        oc_jessie="n"
+        oc_jessie=n
      else
-        sed -i '#deb ftp://ftp.debian.org/debian/ jessie main#d' /etc/apt/sources.list
+        sed -i '/jessie/d' /etc/apt/sources.list
     fi
     print_info "Sources ok"
 #get IPv4 info,install tools 
@@ -330,7 +332,7 @@ function pre_install(){
     cat /etc/apt/sources.list | grep 'deb http://ftp.debian.org/debian wheezy-backports main' > /dev/null 2>&1
     if [ $? -ne 0 ]; then
         echo "deb http://ftp.debian.org/debian wheezy-backports main contrib non-free" >> /etc/apt/sources.list
-        oc_wheezy_backports="n"
+        oc_wheezy_backports=n
     fi
     apt-get update
     apt-get install -y libprotobuf-c0-dev 
@@ -340,10 +342,10 @@ function pre_install(){
     echo "deb ftp://ftp.debian.org/debian/ jessie main contrib non-free" >> /etc/apt/sources.list
 #if sources del 如果本来没有测试源便删除
     if [ "$oc_wheezy_backports" = "n" ]; then
-        sed -i '#deb http://ftp.debian.org/debian wheezy-backports main contrib non-free#d' /etc/apt/sources.list
+        sed -i '/wheezy-backports/d' /etc/apt/sources.list
     fi
     if [ "$oc_jessie" = "n" ]; then
-        sed -i '#deb ftp://ftp.debian.org/debian/ jessie main contrib non-free#d' /etc/apt/sources.list
+        sed -i '/jessie/d' /etc/apt/sources.list
     fi
 #keep update
     apt-get update
@@ -356,10 +358,11 @@ function tar_ocserv_install(){
     if [ "$max_router" = "" ]; then
         max_router="200"
     fi
-    wget ftp://ftp.infradead.org/pub/ocserv/ocserv-0.8.9.tar.xz
-    tar xvf ocserv-0.8.9.tar.xz
-    rm -rf ocserv-0.8.9.tar.xz
-    cd ocserv-0.8.9
+    oc_version=0.8.9
+    wget ftp://ftp.infradead.org/pub/ocserv/ocserv-$oc_version.tar.xz
+    tar xvf ocserv-$oc_version.tar.xz
+    rm -rf ocserv-$oc_version.tar.xz
+    cd ocserv-$oc_version
 #have to use "" then $ work ,set router limit
     sed -i "s/#define MAX_CONFIG_ENTRIES 64/#define MAX_CONFIG_ENTRIES $max_router/g" src/vpn.h
     ./configure --prefix=/usr --sysconfdir=/etc && make && make install
@@ -374,7 +377,7 @@ function tar_ocserv_install(){
     cp doc/dbus/org.infradead.ocserv.conf /etc/dbus-1/system.d/
     sed -i "s@localhost@$ocserv_hostname@g" /etc/ocserv/profile.xml
     cd ..
-    rm -rf ocserv-0.8.9
+    rm -rf ocserv-$oc_version
 #get config file from net
     cd /etc/ocserv
     wget https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/ocserv.conf --no-check-certificate
@@ -439,16 +442,17 @@ _EOF_
         die "CA or KEY NOT Found , make failure!"
     fi
     cp server-cert.pem /etc/ocserv/ && cp server-key.pem /etc/ocserv/
-
+    cp ca-cert.pem /etc/ocserv/
     print_info "Self-signed CA for ocserv ok"
 }
 
 function ca_login_ocserv(){
 #make a client cert
     cd /etc/ocserv/CAforOC
+    caname=`cat ca.tmpl | grep cn | cut -d '"' -f 2`
     cat << _EOF_ > user.tmpl
-cn = "Client ocserv"
-unit = "Client ocserv"
+cn = "Client"
+unit = "Client"
 expiration_days = 7777
 signing_key
 tls_www_client
@@ -458,10 +462,10 @@ _EOF_
 #user cert
     certtool --generate-certificate --load-privkey user-key.pem --load-ca-certificate ca-cert.pem --load-ca-privkey ca-key.pem --template user.tmpl --outfile user-cert.pem
 #p12
-    openssl pkcs12 -export -inkey user-key.pem -in user-cert.pem -certfile ca-cert.pem -out user.p12 -passout pass:$password
+    openssl pkcs12 -export -inkey user-key.pem -in user-cert.pem -name "Client" -certfile ca-cert.pem -caname "$caname" -out user.p12 -passout pass:$password
 #cp and mv
     mv user.p12 /root/
-    cp ca-cert.pem /etc/ocserv/
+
 }
 
 #set 设定相关参数
@@ -489,10 +493,14 @@ function set_ocserv_conf(){
     fi
 #set ca_login
     if [ "$ca_login" = "y" ]; then
-        sed -i 's@auth = "plain[/etc/ocserv/ocpasswd]"@#auth = "plain[/etc/ocserv/ocpasswd]"@g' /etc/ocserv/ocserv.conf
+        sed -i 's@auth = "plain@#auth = "plain@g' /etc/ocserv/ocserv.conf
         sed -i 's@#auth = "certificate"@auth = "certificate"@' /etc/ocserv/ocserv.conf
         sed -i 's@#ca-cert = /path/to/ca.pem@ca-cert = /etc/ocserv/ca-cert.pem@' /etc/ocserv/ocserv.conf
+        echo 'cisco-client-compat = true' >> /etc/ocserv/ocserv.conf
     fi
+    echo 'cisco-client-compat = true' >> /etc/ocserv/ocserv.conf
+#0.9.2 set
+#   echo 'compression = true' >> /etc/ocserv/ocserv.conf
     print_info "Set ocserv ok"
 }
 
