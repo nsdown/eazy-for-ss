@@ -158,7 +158,8 @@ else
 	read -p "IP address: " -e -i $IP IP
 	echo ""
 	echo "What port do you want for OpenVPN?"
-	read -p "Port: " -e -i 1194 PORT
+    #1194 is blocked by GFW
+	read -p "Port: " -e -i 4001 PORT
 	echo ""
 	echo "Do you want OpenVPN to be available at port 53 too?"
 	echo "This can be useful to connect under restrictive networks"
@@ -232,6 +233,16 @@ else
 	sed -i 's|dh dh1024.pem|dh dh2048.pem|' server.conf
 	sed -i 's|;push "redirect-gateway def1 bypass-dhcp"|push "redirect-gateway def1 bypass-dhcp"|' server.conf
 	sed -i "s|port 1194|port $PORT|" server.conf
+    #允许同账号异地登录及网络优化
+    sed -i 's|;duplicate-cn|duplicate-cn|' server.conf
+    cat  cat << _EOF_ >> server.conf
+
+# optimized network params
+sndbuf 1048576
+rcvbuf 1048576
+txqueuelen 1000
+
+_EOF_
 	# DNS
 	case $DNS in
 		1) 
@@ -316,6 +327,17 @@ else
 	# IP/port set on the default client.conf so we can add further users
 	# without asking for them
 	sed -i "s|remote my-server-1 1194|remote $IP $PORT|" /usr/share/doc/openvpn*/*ample*/sample-config-files/client.conf
+    #去除persist-tun
+    sed -i 's|persist-tun|;persist-tun|' /usr/share/doc/openvpn*/*ample*/sample-config-files/client.conf
+    #网络优化
+    cat  cat << _EOF_ >> /usr/share/doc/openvpn*/*ample*/sample-config-files/client.conf
+
+# optimized network params
+tun-mtu 1356
+ping 25
+ping-restart 60
+
+_EOF_
 	# Generate the client.ovpn
 	newclient "$CLIENT"
 	echo ""
