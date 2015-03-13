@@ -116,17 +116,20 @@ net.ipv4.tcp_congestion_control = $tcp_congestion_ss
 EOF
 
 sysctl -p /etc/sysctl.d/local_ss.conf
-   
-# Debian version 6.x.x
-if grep ^6. /etc/debian_version > /dev/null
-then
-	echo "deb http://shadowsocks.org/debian squeeze main" >> /etc/apt/sources.list
-fi
 
+#+sources   
+cat /etc/apt/sources.list | grep 'deb http://shadowsocks.org/debian' > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+# Debian version 6.x.x
+    if grep ^6. /etc/debian_version > /dev/null
+    then
+	    echo "deb http://shadowsocks.org/debian squeeze main" >> /etc/apt/sources.list
+    fi
 # Debian version 7.x.x
-if grep ^7. /etc/debian_version > /dev/null
-then
-	echo "deb http://shadowsocks.org/debian wheezy main" >> /etc/apt/sources.list
+    if grep ^7. /etc/debian_version > /dev/null
+    then
+	    echo "deb http://shadowsocks.org/debian wheezy main" >> /etc/apt/sources.list
+    fi
 fi
 
 #add gpg
