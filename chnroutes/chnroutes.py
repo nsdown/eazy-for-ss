@@ -245,10 +245,10 @@ if __name__=='__main__':
                         default='openvpn',
                         nargs='?',
                         help="Target platforms, it can be openvpn, mac, linux," 
-                        "win, android. openvpn by default.")
+                        "win, android,ocserv. openvpn by default.")
     parser.add_argument('-m','--metric',
                         dest='metric',
-                        default=5,
+                        default=6,
                         nargs='?',
                         type=int,
                         help="Metric setting for the route rules")
@@ -258,7 +258,7 @@ if __name__=='__main__':
     if args.platform.lower() == 'openvpn':
         generate_ovpn(args.metric)
     elif args.platform.lower() == 'ocserv':
-        generate_linux(args.metric)
+        generate_ocserv(args.metric)
     elif args.platform.lower() == 'linux':
         generate_linux(args.metric)
     elif args.platform.lower() == 'mac':
