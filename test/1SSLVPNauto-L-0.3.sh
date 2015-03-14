@@ -83,6 +83,22 @@ function install_OpenConnect_VPN_server(){
     show_ocserv    
 }
 
+function get_new_userca {
+    if [ ! -f /usr/sbin/ocserv ]
+    then
+        die "Ocserv NOT Found !!!"
+    fi
+    if [ ! -f /etc/ocserv/server-cert.pem ] || [ ! -f /etc/ocserv/server-key.pem ]; then
+        die "CA or KEY NOT Found !!!"
+    fi
+    ca_login="y"
+    self_signed_ca="y"
+    add_a_user
+    ca_login_ocserv
+    
+    
+}
+
 function reinstall_ocserv {
     stop_ocserv
     rm -rf /etc/ocserv
@@ -328,6 +344,18 @@ function pre_install(){
 #keep kernel 防止某些情况下内核升级
     echo linux-image-`uname -r` hold | sudo dpkg --set-selections
     apt-get upgrade -y
+#no update from test sources
+    if [ ! -d /etc/apt/preferences.d ];then
+        mkdir /etc/apt/preferences.d
+    fi
+    cat > /etc/apt/preferences.d/my_ocserv_preferences<<EOF
+Package: *
+Pin: release wheezy-backports
+Pin-Priority: 90
+Package: *
+Pin: release jessie
+Pin-Priority: 60
+EOF
 #sources check, Do not change the order 不要轻易改变升级顺序
     cat /etc/apt/sources.list | grep 'deb http://ftp.debian.org/debian wheezy-backports main' > /dev/null 2>&1
     if [ $? -ne 0 ]; then
@@ -338,8 +366,10 @@ function pre_install(){
     apt-get install -y libprotobuf-c0-dev 
     apt-get install -y libreadline6 libreadline5 libreadline6-dev libgmp3-dev m4 gcc pkg-config make gnutls-bin libtalloc-dev build-essential libwrap0-dev libpam0g-dev libdbus-1-dev libreadline-dev libnl-route-3-dev libpcl1-dev libopts25-dev autogen  libnl-nf-3-dev debhelper libseccomp-dev
     apt-get install -y -t wheezy-backports  libgnutls28-dev 
-#sources check @ check Required 源检测在前面
+#sources check @ check Required 源检测在前面 增加压缩必须包
     echo "deb ftp://ftp.debian.org/debian/ jessie main contrib non-free" >> /etc/apt/sources.list
+    apt-get update
+    apt-get install -y -t jessie  liblz4-dev 
 #if sources del 如果本来没有测试源便删除
     if [ "$oc_wheezy_backports" = "n" ]; then
         sed -i '/wheezy-backports/d' /etc/apt/sources.list
@@ -348,6 +378,7 @@ function pre_install(){
         sed -i '/jessie/d' /etc/apt/sources.list
     fi
 #keep update
+    rm -rf /etc/apt/preferences.d/my_ocserv_preferences
     apt-get update
     print_info "Dependencies  ok"
 }
@@ -358,7 +389,7 @@ function tar_ocserv_install(){
     if [ "$max_router" = "" ]; then
         max_router="200"
     fi
-    oc_version=0.8.9
+    oc_version=0.9.2
     wget ftp://ftp.infradead.org/pub/ocserv/ocserv-$oc_version.tar.xz
     tar xvf ocserv-$oc_version.tar.xz
     rm -rf ocserv-$oc_version.tar.xz
@@ -451,8 +482,12 @@ function ca_login_ocserv(){
 #make a client cert
     cd /etc/ocserv/CAforOC
     caname=`cat ca.tmpl | grep cn | cut -d '"' -f 2`
+    name_user_ca=$(get_random_word 8)
+    if [ -d user-${name_user_ca} ];then
+        name_user_ca=$(get_random_word 2)${name_user_ca}
+    fi
     cat << _EOF_ > user.tmpl
-cn = "Client"
+cn = "Client${name_user_ca}"
 unit = "Client"
 expiration_days = 7777
 signing_key
@@ -463,9 +498,14 @@ _EOF_
 #user cert
     certtool --generate-certificate --load-privkey user-key.pem --load-ca-certificate ca-cert.pem --load-ca-privkey ca-key.pem --template user.tmpl --outfile user-cert.pem
 #p12
-    openssl pkcs12 -export -inkey user-key.pem -in user-cert.pem -name "Client" -certfile ca-cert.pem -caname "$caname" -out user.p12 -passout pass:$password
-#cp and mv
-    mv user.p12 /root/
+    openssl pkcs12 -export -inkey user-key.pem -in user-cert.pem -name "Client${name_user_ca}" -certfile ca-cert.pem -caname "$caname" -out user.p12 -passout pass:$password
+#rename
+    mkdir user-${name_user_ca}
+    mv user-key.pem user-${name_user_ca}/user-key-${name_user_ca}.pem
+    mv user-cert.pem user-${name_user_ca}/user-cert-${name_user_ca}.pem
+    mv user.p12 user-${name_user_ca}/user-${name_user_ca}.p12
+#cp to root
+    cp user-${name_user_ca}/user-${name_user_ca}.p12 /root/
 
 }
 
@@ -497,11 +537,10 @@ function set_ocserv_conf(){
         sed -i 's@auth = "plain@#auth = "plain@g' /etc/ocserv/ocserv.conf
         sed -i 's@#auth = "certificate"@auth = "certificate"@' /etc/ocserv/ocserv.conf
         sed -i 's@#ca-cert = /path/to/ca.pem@ca-cert = /etc/ocserv/ca-cert.pem@' /etc/ocserv/ocserv.conf
-        echo 'cisco-client-compat = true' >> /etc/ocserv/ocserv.conf
     fi
     echo 'cisco-client-compat = true' >> /etc/ocserv/ocserv.conf
-#0.9.2 set
-#   echo 'compression = true' >> /etc/ocserv/ocserv.conf
+#0.9.2 compression 0.9.2 增加压缩指令
+    echo 'compression = true' >> /etc/ocserv/ocserv.conf
     print_info "Set ocserv ok"
 }
 
