@@ -1,15 +1,14 @@
 #! /bin/bash
-PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
-export PATH
+
 #===============================================================================================
-#   System Required:  Debian/Ubuntu (32bit/64bit)
-#   Description:  Install ShadowVPN Single user for Debian/Ubuntu
+#   System Required:  Debian (32bit/64bit)
+#   Description:  Install ShadowVPN Single user for Debian
 #   
 #===============================================================================================
 
 clear
 echo "#############################################################"
-echo "# Install ShadowVPN for Debian/Ubuntu (32bit/64bit)"
+echo "# Install ShadowVPN for Debian (32bit/64bit)"
 echo "#############################################################"
 echo ""
 
@@ -55,7 +54,7 @@ function uninstall_ShadowVPN_libsodium(){
         answer="n"
     fi
     if [ "$answer" = "y" ]; then
-        #stop ss
+        #stop
         stop_ShadowVPN
         # restore /etc/rc.local
         if [[ -s /opt/rc.local_bak_sv_l ]]; then
@@ -144,52 +143,12 @@ function ShadowVPN_update(){
 
 function config_ShadowVPN(){
 # set config 
-cat > /etc/shadowvpn/server.conf<<-EOF
-# ShadowVPN config example
 
-# notice: do not put space before or after "="
+D_SVPN_PASSWD=`cat $SHADOWVPN_CONFIG | grep ^pa | cut -d '=' -f 2`
+D_SVPN_PORT=`cat $SHADOWVPN_CONFIG | grep ^po | cut -d '=' -f 2`
 
-# server listen address
-server=0.0.0.0
-
-# server listen port
-port=${ShadowVPNpt}
-
-# password to use
-# you can generate one by:
-# dd if=/dev/urandom bs=64 count=1 | md5sum
-password=${ShadowVPNpwd}
-
-# server or client
-mode=server
-
-# max source ports
-# must be the SAME with client or won't work properly
-concurrency=1
-
-# the MTU of VPN device
-# 1492(Ethernet) - 20(IPv4, or 40 for IPv6) - 8(UDP) - 24(ShadowVPN)
-mtu=1440
-
-# tunnel device name
-intf=tun0
-
-# the script to run after VPN is created
-# use this script to set up routes, NAT, etc
-# configuration in this file will be set as environment variables
-up=/etc/shadowvpn/server_up.sh
-
-# the script to run before stopping VPN
-# use this script to restore routes, NAT, etc
-# configuration in this file will be set as environment variables
-down=/etc/shadowvpn/server_down.sh
-
-# PID file path
-pidfile=/var/run/shadowvpn.pid
-
-# log file path
-logfile=/var/log/shadowvpn.log
-EOF
+sed -i 's/$D_SVPN_PASSWD/$ShadowVPNpwd/' $SHADOWVPN_CONFIG
+sed -i 's/$D_SVPN_PORT/$ShadowVPNpt/' $SHADOWVPN_CONFIG
 
 }
 
@@ -244,6 +203,10 @@ else
 	exit
 fi
 }
+
+#vars
+SHADOWVPN_CONFIG="/etc/shadowvpn/server.conf"
+
 # Initialization step
 action=$1
 [  -z $1 ] && action=install
