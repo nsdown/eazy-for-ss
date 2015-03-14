@@ -248,7 +248,7 @@ if __name__=='__main__':
                         "win, android,ocserv. openvpn by default.")
     parser.add_argument('-m','--metric',
                         dest='metric',
-                        default=6,
+                        default=5,
                         nargs='?',
                         type=int,
                         help="Metric setting for the route rules")
