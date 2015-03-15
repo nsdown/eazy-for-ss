@@ -123,6 +123,7 @@ function revoke_userca {
     cat ${revoke_ca}/${revoke_ca}-cert.pem >>revoked.pem
     certtool --generate-crl --load-ca-privkey ca-key.pem --load-ca-certificate ca-cert.pem --load-certificate revoked.pem --template crl.tmpl --outfile ../crl.pem
 #show
+    rm -rf ${revoke_ca}
     /etc/init.d/ocserv restart
     print_info "${revoke_ca} was revoked."
     
