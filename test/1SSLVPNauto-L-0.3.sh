@@ -584,6 +584,7 @@ function set_ocserv_conf(){
 
 function stop_ocserv(){
 #stop all
+    /etc/init.d/ocserv stop
     oc_pid=`pidof ocserv`
     if [ ! -z "$oc_pid" ]; then
         for pid in $oc_pid
