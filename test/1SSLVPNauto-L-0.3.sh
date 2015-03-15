@@ -569,7 +569,9 @@ function set_ocserv_conf(){
         sed -i 's@auth = "plain@#auth = "plain@g' /etc/ocserv/ocserv.conf
         sed -i 's@#auth = "certificate"@auth = "certificate"@' /etc/ocserv/ocserv.conf
         sed -i 's@#ca-cert = /path/to/ca.pem@ca-cert = /etc/ocserv/ca-cert.pem@' /etc/ocserv/ocserv.conf
-        sed -i 's@#crl = /path/to/crl.pem@crl = /etc/ocserv/crl.pem@' /etc/ocserv/ocserv.conf
+    fi
+    if [ "$ca_login" = "y" ] && [ "$self_signed_ca" = "y" ]; then
+    sed -i 's@#crl = /path/to/crl.pem@crl = /etc/ocserv/crl.pem@' /etc/ocserv/ocserv.conf
     fi
 #0.9.2 compression 0.9.2 增加压缩指令
     echo 'compression = true' >> /etc/ocserv/ocserv.conf
