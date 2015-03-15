@@ -88,7 +88,7 @@ function get_new_userca {
     then
         die "Ocserv NOT Found !!!"
     fi
-    if [ ! -f /etc/ocserv/ca-cert.pem ] || [ ! -f /etc/ocserv/ca-key.pem ]; then
+    if [ ! -f /etc/ocserv/CAforOC/ca-cert.pem ] || [ ! -f /etc/ocserv/CAforOC/ca-key.pem ]; then
         die "CA or KEY NOT Found !!!Only Support Self-signed CA!!!"
     fi
     ca_login="y"
@@ -105,7 +105,7 @@ function revoke_userca {
     then
         die "Ocserv NOT Found !!!"
     fi
-    if [ ! -f /etc/ocserv/ca-cert.pem ] || [ ! -f /etc/ocserv/ca-key.pem ]; then
+    if [ ! -f /etc/ocserv/CAforOC/ca-cert.pem ] || [ ! -f /etc/ocserv/CAforOC/ca-key.pem ]; then
         die "CA or KEY NOT Found !!!Only Support Self-signed CA!!!"
     fi
 #get info
@@ -511,9 +511,9 @@ function ca_login_ocserv(){
 #make a client cert
     cd /etc/ocserv/CAforOC
     caname=`cat ca.tmpl | grep cn | cut -d '"' -f 2`
-    name_user_ca=$(get_random_word 3)
+    name_user_ca=$(get_random_word 4)
     if [ -d user-${name_user_ca} ];then
-        name_user_ca=$(get_random_word 2)${name_user_ca}
+        name_user_ca=$(get_random_word 8)${name_user_ca}
     fi
     cat << _EOF_ > user.tmpl
 cn = "Client${name_user_ca}"
