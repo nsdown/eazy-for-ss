@@ -88,15 +88,16 @@ function get_new_userca {
     then
         die "Ocserv NOT Found !!!"
     fi
-    if [ ! -f /etc/ocserv/server-cert.pem ] || [ ! -f /etc/ocserv/server-key.pem ]; then
-        die "CA or KEY NOT Found !!!"
+    if [ ! -f /etc/ocserv/ca-cert.pem ] || [ ! -f /etc/ocserv/ca-key.pem ]; then
+        die "CA or KEY NOT Found !!!Only Support Self-signed CA!!!"
     fi
     ca_login="y"
     self_signed_ca="y"
     add_a_user
     ca_login_ocserv
-    
-    
+    print_info "You can get user.p12 from /root"
+    echo -e "\033[41;37m Your p12-cert's password is \033[0m" "$password"
+    print_warn " You have to import the certificate to your device at first."
 }
 
 function reinstall_ocserv {
@@ -627,17 +628,17 @@ restart)
     stop_ocserv
     start_ocserv
     ;;
-stop)
-    stop_ocserv
+getuserca)
+    get_new_userca
     ;;
-start)
-    start_ocserv
+revokeuserca)
+    revoke_userca
     ;;
 reinstall)
     reinstall_ocserv
     ;;
 *)
     echo "Arguments error! [${action} ]"
-    echo "Usage: `basename $0` {install|restart|stop|start|reinstall}"
+    echo "Usage: `basename $0` {install|restart|getuserca|revokeuserca|reinstall}"
     ;;
 esac
