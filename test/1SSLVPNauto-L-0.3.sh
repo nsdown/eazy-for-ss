@@ -532,7 +532,7 @@ _EOF_
 #cp to root
     cp user-${name_user_ca}/user-${name_user_ca}.p12 /root/
 #make a empty revocation list
-    if [ ! -f crl.tmpl ] || [ ! -f crl.pem ];then
+    if [ ! -f crl.tmpl ];then
     cat << EOF >crl.tmpl
 crl_next_update = 7777 
 crl_number = 1 
