@@ -541,7 +541,7 @@ _EOF_
 crl_next_update = 7777 
 crl_number = 1 
 EOF
-    certtool --generate-crl --load-ca-privkey ca-key.pem --load-ca-certificate ca.pem --template crl.tmpl --outfile ../crl.pem
+    certtool --generate-crl --load-ca-privkey ca-key.pem --load-ca-certificate ca-cert.pem --template crl.tmpl --outfile ../crl.pem
     fi
 }
 
