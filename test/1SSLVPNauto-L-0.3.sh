@@ -122,6 +122,10 @@ function revoke_userca {
 #revoke   
     cat ${revoke_ca}/${revoke_ca}-cert.pem >>revoked.pem
     certtool --generate-crl --load-ca-privkey ca-key.pem --load-ca-certificate ca-cert.pem --load-certificate revoked.pem --template crl.tmpl --outfile ../crl.pem
+#show
+    /etc/init.d/ocserv restart
+    print_info "${revoke_ca} was revoked."
+    
 }
 
 function reinstall_ocserv {
@@ -470,7 +474,7 @@ function make_ocserv_ca(){
     if [ "$fqdnname" = "" ]; then
         fqdnname=$ocserv_hostname
     fi
-#server-ca
+#generating the CA 制作自签证书授权中心
     certtool --generate-privkey --outfile ca-key.pem
     cat << _EOF_ > ca.tmpl
 cn = "$caname"
@@ -483,7 +487,7 @@ cert_signing_key
 crl_signing_key
 _EOF_
     certtool --generate-self-signed --load-privkey ca-key.pem --template ca.tmpl --outfile ca-cert.pem
-#server-key
+#generating a local server key-certificate pair 通过自签证书授权中心制作服务器的证书与秘钥
     certtool --generate-privkey --outfile server-key.pem
     cat << _EOF_ > server.tmpl
 cn = "$fqdnname"
