@@ -123,7 +123,7 @@ function revoke_userca {
     cat ${revoke_ca}/${revoke_ca}-cert.pem >>revoked.pem
     certtool --generate-crl --load-ca-privkey ca-key.pem --load-ca-certificate ca-cert.pem --load-certificate revoked.pem --template crl.tmpl --outfile ../crl.pem
 #show
-    rm -rf ${revoke_ca}
+    mv ${revoke_ca} revoke/
     /etc/init.d/ocserv restart
     print_info "${revoke_ca} was revoked."
     
@@ -434,7 +434,7 @@ function tar_ocserv_install(){
         die "Ocserv install failure,check dependencies!"
     fi
 #mv files
-    mkdir -p /etc/ocserv/CAforOC
+    mkdir -p /etc/ocserv/CAforOC/revoke
     cp doc/profile.xml /etc/ocserv
     cp doc/dbus/org.infradead.ocserv.conf /etc/dbus-1/system.d/
     sed -i "s@localhost@$ocserv_hostname@g" /etc/ocserv/profile.xml
