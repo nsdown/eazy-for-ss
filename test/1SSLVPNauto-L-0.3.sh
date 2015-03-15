@@ -100,6 +100,30 @@ function get_new_userca {
     print_warn " You have to import the certificate to your device at first."
 }
 
+function revoke_userca {
+    if [ ! -f /usr/sbin/ocserv ]
+    then
+        die "Ocserv NOT Found !!!"
+    fi
+    if [ ! -f /etc/ocserv/ca-cert.pem ] || [ ! -f /etc/ocserv/ca-key.pem ]; then
+        die "CA or KEY NOT Found !!!Only Support Self-signed CA!!!"
+    fi
+#get info
+    cd /etc/ocserv/CAforOC
+    ls -F|grep /|grep user|cut -d '/' -f 1
+    echo "Which user do you want to revoke?"
+	read -p "Which: " -e -i user- revoke_ca
+    if [ ! -f /etc/ocserv/CAforOC/$revoke_ca/$revoke_ca.p12 ]
+    then
+        die "$revoke_ca NOT Found !!!"
+    fi
+    echo "Okay,${revoke_ca} will be revoked."
+	read -n1 -r -p "Press any key to continue...or Press Ctrl+C to cancel"
+#revoke   
+    cat ${revoke_ca}/${revoke_ca}-cert.pem >>revoked.pem
+    certtool --generate-crl --load-ca-privkey ca-key.pem --load-ca-certificate ca-cert.pem --load-certificate revoked.pem --template crl.tmpl --outfile ../crl.pem
+}
+
 function reinstall_ocserv {
     stop_ocserv
     rm -rf /etc/ocserv
@@ -483,7 +507,7 @@ function ca_login_ocserv(){
 #make a client cert
     cd /etc/ocserv/CAforOC
     caname=`cat ca.tmpl | grep cn | cut -d '"' -f 2`
-    name_user_ca=$(get_random_word 8)
+    name_user_ca=$(get_random_word 3)
     if [ -d user-${name_user_ca} ];then
         name_user_ca=$(get_random_word 2)${name_user_ca}
     fi
@@ -502,12 +526,19 @@ _EOF_
     openssl pkcs12 -export -inkey user-key.pem -in user-cert.pem -name "Client${name_user_ca}" -certfile ca-cert.pem -caname "$caname" -out user.p12 -passout pass:$password
 #rename
     mkdir user-${name_user_ca}
-    mv user-key.pem user-${name_user_ca}/user-key-${name_user_ca}.pem
-    mv user-cert.pem user-${name_user_ca}/user-cert-${name_user_ca}.pem
+    mv user-key.pem user-${name_user_ca}/user-${name_user_ca}-key.pem
+    mv user-cert.pem user-${name_user_ca}/user-${name_user_ca}-cert.pem
     mv user.p12 user-${name_user_ca}/user-${name_user_ca}.p12
 #cp to root
     cp user-${name_user_ca}/user-${name_user_ca}.p12 /root/
-
+#make a empty revocation list
+    if [ ! -f crl.tmpl ] || [ ! -f crl.pem ];then
+    cat << EOF >crl.tmpl
+crl_next_update = 7777 
+crl_number = 1 
+EOF
+    certtool --generate-crl --load-ca-privkey ca-key.pem --load-ca-certificate ca.pem --template crl.tmpl --outfile ../crl.pem
+    fi
 }
 
 #set 设定相关参数
@@ -538,8 +569,8 @@ function set_ocserv_conf(){
         sed -i 's@auth = "plain@#auth = "plain@g' /etc/ocserv/ocserv.conf
         sed -i 's@#auth = "certificate"@auth = "certificate"@' /etc/ocserv/ocserv.conf
         sed -i 's@#ca-cert = /path/to/ca.pem@ca-cert = /etc/ocserv/ca-cert.pem@' /etc/ocserv/ocserv.conf
+        sed -i 's@#crl = /path/to/crl.pem@crl = /etc/ocserv/crl.pem@' /etc/ocserv/ocserv.conf
     fi
-    echo 'cisco-client-compat = true' >> /etc/ocserv/ocserv.conf
 #0.9.2 compression 0.9.2 增加压缩指令
     echo 'compression = true' >> /etc/ocserv/ocserv.conf
     print_info "Set ocserv ok"
