@@ -11,3 +11,13 @@ python chnroutes.py -p ocserv
 ```
 
 然后在当前目录下出现routes.conf，把内容追加到ocserv.conf中即可。
+
+```shell
+cat routes.conf >> /etc/ocserv/ocserv.conf
+```
+
+去除
+
+```shell
+sed -i '/no-route/d' /etc/ocserv/ocserv.conf
+```
