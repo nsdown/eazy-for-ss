@@ -19,5 +19,5 @@ cat routes.conf >> /etc/ocserv/ocserv.conf
 去除
 
 ```shell
-sed -i '/no-route/d' /etc/ocserv/ocserv.conf
+sed -i '/^no-route/d' /etc/ocserv/ocserv.conf
 ```
