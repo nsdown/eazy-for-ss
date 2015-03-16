@@ -450,8 +450,6 @@ function tar_ocserv_install(){
     mv ocserv /etc/init.d
     chmod +x start-ocserv-sysctl.sh
     chmod +x stop-ocserv-sysctl.sh
-    touch ocpasswd
-    chmod 600 ocpasswd   
     print_info "Ocserv install ok"
 }
 
