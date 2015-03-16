@@ -176,13 +176,13 @@ function check_Required {
         sed -i '/jessie/d' /etc/apt/sources.list
     fi
     print_info "Sources ok"
-#get IPv4 info,install tools 
+#get IPv4 info,install base-tools 
     print_info "Getting ip and base-tools from net......"
     apt-get update  -qq
-    apt-get install -qq -y vim sudo gawk curl nano sed insserv
+    apt-get install -qq -y vim sudo gawk curl nano sed insserv dnsutils
     ocserv_hostname=$(wget -qO- ipv4.icanhazip.com)
     if [ $? -ne 0 -o -z $ocserv_hostname ]; then
-        ocserv_hostname=`curl -s liyangyijie.sinaapp.com/ip/`
+        ocserv_hostname=`dig +short +tcp myip.opendns.com @resolver1.opendns.com`
     fi
     print_info "Get ip and base-tools ok"
 #get default port 从网络配置中获取默认使用端口
