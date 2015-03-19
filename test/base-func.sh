@@ -14,7 +14,9 @@ function print_info {
 ##### echo
 function print_xxxx {
     xXxX="#############################"
-    echo $xXxX$xXxX$xXxX$xXxX
+    echo
+    echo "$xXxX$xXxX$xXxX$xXxX"
+    echo
 }
 #warn echo
 function print_warn {
