@@ -102,7 +102,7 @@ function get_random_word(){
 #setup
 function setup_pptp{
 #install pptp
-    echo
+    echo ""
     print_xxxx
     print_info "Downloading and Installing PPTP"
     print_xxxx
