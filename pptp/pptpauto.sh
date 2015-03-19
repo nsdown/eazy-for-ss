@@ -101,8 +101,6 @@ function get_random_word(){
 
 #setup
 function setup_pptp{
-#get the first user info
-    creat_user
 #install pptp
     echo
     print_xxxx
@@ -203,9 +201,10 @@ fi
 #choice
 read x
 if test $x -eq 1; then
+    creat_user
     setup_pptp
 elif test $x -eq 2; then
     creat_user
 else
-die "Invalid selection, quitting."
+    die "Invalid selection, quitting."
 fi
