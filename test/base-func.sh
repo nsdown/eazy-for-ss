@@ -97,7 +97,8 @@ function get_random_word(){
 #fast mode
 function fast_Default_Ask(){
     if [ "$fast_install" = "y" ] ; then
-        print_xxxx
+        CONFIG_PATH_VARS=${CONFIG_PATH_VARS:-./temp_vars}
+        print_info "In the fast mode, $3 will be loaded from $CONFIG_PATH_VARS"
     else
         Default_Ask "$1" "$2" "$3"
     fi
