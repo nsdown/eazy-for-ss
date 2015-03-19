@@ -2,7 +2,7 @@
 
 #force-exit
 function die {
-    echo "ERROR: $1" > /dev/null 1>&2
+    echo -e "\033[33mERROR: $1 \033[0m" > /dev/null 1>&2
     exit 1
 }
 #info echo
