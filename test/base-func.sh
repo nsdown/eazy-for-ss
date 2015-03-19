@@ -103,3 +103,8 @@ function fast_Default_Ask(){
         Default_Ask "$1" "$2" "$3"
     fi
 }
+#$1位随机文本 去除容易认混单字
+function get_random_word_no_mistake(){
+    str_no_mistake=`cat /dev/urandom | tr -cd abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789 | head -c $1`
+    echo $str_no_mistake
+}
