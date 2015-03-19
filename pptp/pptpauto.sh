@@ -100,7 +100,7 @@ function get_random_word(){
 ###################################################################################################################
 
 #setup
-function setup_pptp{
+function setup_pptp {
 #install pptp
     echo ""
     print_xxxx
@@ -153,7 +153,7 @@ function setup_pptp{
     fi
 }
 #get a user
-function creat_user{
+function creat_user {
     Default_Ask "Input your username" "$(get_random_word 3)" "u"
     Default_Ask "Input your password" "$(get_random_word 6)" "p"
     press_any_key
