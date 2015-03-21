@@ -25,21 +25,21 @@ function print_warn {
     echo -e '\033[0m'
 }
 #question mod 提问模板
-#question must '.' not 'bash'
+#sources must '.' not 'bash'
 #Default_Ask "what's your name?" "li" "The_name"
-#echo $Name
+#echo $The_name
 function Default_Ask(){
     echo
     Temp_question=$1
     Temp_default_var=$2
     Temp_var_name=$3
-#default path 如果为空 则定为./temp_vars
-    CONFIG_PATH_VARS=${CONFIG_PATH_VARS:-./temp_vars}
+#default path 如果为空 则定为/temp_vars
+    CONFIG_PATH_VARS=${CONFIG_PATH_VARS:-$(Get_shell_path)/temp_vars}
 #rewrite $ok
     if [  -f ${CONFIG_PATH_VARS} ] ; then
         New_temp_default_var=`cat $CONFIG_PATH_VARS | grep "export $Temp_var_name=" | cut -d "'" -f 2`
         Temp_default_var=${New_temp_default_var:-$Temp_default_var}
-#删除变量务必带着=以及空格 否则全删掉 ""变量替换有效 '变量不替换
+#"变量替换有效 '变量不替换
         sed -i "/export $Temp_var_name=/d" $CONFIG_PATH_VARS
     fi
 #if yes or no 
@@ -97,7 +97,7 @@ function get_random_word(){
 #fast mode
 function fast_Default_Ask(){
     if [ "$fast_install" = "y" ] ; then
-        CONFIG_PATH_VARS=${CONFIG_PATH_VARS:-./temp_vars}
+        CONFIG_PATH_VARS=${CONFIG_PATH_VARS:-$(Get_shell_path)/temp_vars}
         print_info "In the fast mode, $3 will be loaded from $CONFIG_PATH_VARS"
     else
         Default_Ask "$1" "$2" "$3"
@@ -107,4 +107,12 @@ function fast_Default_Ask(){
 function get_random_word_no_mistake(){
     str_no_mistake=`cat /dev/urandom | tr -cd abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789 | head -c $1`
     echo $str_no_mistake
+}
+#shell path 获取当前脚本路径
+function Get_shell_path {
+    Now_work_path=`pwd`
+    cd `dirname $0`
+    This_shell_path=`pwd`
+    cd $Now_work_path
+    echo $This_shell_path
 }
