@@ -35,7 +35,7 @@ function Default_Ask(){
     Temp_default_var=$2
     Temp_var_name=$3
 #default path ./temp_vars
-    CONFIG_PATH_VARS=${CONFIG_PATH_VARS:-./temp_vars}
+    CONFIG_PATH_VARS=${CONFIG_PATH_VARS:-$(Get_shell_path)/temp_vars}
 #load form vars files
     if [  -f ${CONFIG_PATH_VARS} ] ; then
         New_temp_default_var=`cat $CONFIG_PATH_VARS | grep "export $Temp_var_name=" | cut -d "'" -f 2`
@@ -93,6 +93,15 @@ function get_random_word(){
 #$1 figures
     for i in `seq 1 $1`; do str="$str${arr[$RANDOM%$index]}"; done
     echo $str
+}
+
+#shell path 获取当前脚本路径
+function Get_shell_path {
+    Now_work_path=`pwd`
+    cd `dirname $0`
+    This_shell_path=`pwd`
+    cd $Now_work_path
+    echo $This_shell_path
 }
 
 ###################################################################################################################
