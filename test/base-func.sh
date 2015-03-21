@@ -25,7 +25,7 @@ function print_warn {
     echo -e '\033[0m'
 }
 #question mod 提问模板
-#sources must '.' not 'bash'
+#source must '.' not 'bash'
 #Default_Ask "what's your name?" "li" "The_name"
 #echo $The_name
 function Default_Ask(){
