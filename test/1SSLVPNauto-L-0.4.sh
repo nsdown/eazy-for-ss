@@ -253,7 +253,7 @@ function get_Custom_configuration(){
 #get Company name
         fast_Default_Ask "Your Company name:" "ocvpn" "coname"
 #get server's FQDN
-        fast_Default_Ask "Your server's FQDN:" "$ocserv_hostname" "fqdnname"
+        Default_Ask "Your server's FQDN:" "$ocserv_hostname" "fqdnname"
     fi
 #set max router rulers 最大路由规则限制数目
     fast_Default_Ask "The maximum number of routing table rules?" "200" "max_router"
