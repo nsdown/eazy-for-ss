@@ -130,6 +130,7 @@ function install_OpenConnect_VPN_server(){
 #custom-configuration or not 自定义安装与否
     fast_Default_Ask "Install ocserv with Custom Configuration?(y/n)" "n" "Custom_config_ocserv"
     if [ "$Custom_config_ocserv" = "y" ]; then
+        clear
         print_xxxx
         print_info "Install ocserv with custom configuration."
         echo
@@ -331,11 +332,12 @@ EOF
     echo "deb http://ftp.debian.org/debian jessie main contrib non-free" >> /etc/apt/sources.list
     apt-get update
 #install dependencies from wheezy-backports
-    oc_dependencies="libgnutls28-dev libseccomp-dev"
+    oc_dependencies="libgnutls28-dev  libseccomp-dev"
     TEST_S="-t wheezy-backports"
     Dependencies_install_onebyone
 #install dependencies from jessie
-    oc_dependencies="libprotobuf-c-dev libhttp-parser-dev liblz4-dev"
+#    oc_dependencies="libprotobuf-c-dev libhttp-parser-dev liblz4-dev" #虽然可以完善编译项目 但是意义不大
+    oc_dependencies="liblz4-dev"
     TEST_S="-t jessie"
     Dependencies_install_onebyone
 #if sources del 如果本来没有测试源便删除
@@ -433,6 +435,7 @@ _EOF_
 
 function ca_login_ocserv {
 #make a client cert
+    print_info "Making a client cert..."
     cd /etc/ocserv/CAforOC
     caname=`cat ca.tmpl | grep cn | cut -d '"' -f 2`
     if [ "X${caname}" = "X" ]; then
@@ -470,6 +473,7 @@ crl_number = 1
 EOF
     certtool --generate-crl --load-ca-privkey ca-key.pem --load-ca-certificate ca-cert.pem --template crl.tmpl --outfile ../crl.pem
     fi
+    print_info "Set client cert ok"
 }
 
 #set 设定相关参数
@@ -501,11 +505,13 @@ function set_ocserv_conf(){
         sed -i 's@#auth = "certificate"@auth = "certificate"@' /etc/ocserv/ocserv.conf
         sed -i 's@#ca-cert = /path/to/ca.pem@ca-cert = /etc/ocserv/ca-cert.pem@' /etc/ocserv/ocserv.conf
         sed -i 's@#crl = /path/to/crl.pem@crl = /etc/ocserv/crl.pem@' /etc/ocserv/ocserv.conf
+        sed -i 's@#cert-user-oid = 2.5.4.3@cert-user-oid = 2.5.4.3@' /etc/ocserv/ocserv.conf
     fi
 #compression 开启压缩
     sed -i 's@#compression = true@compression = true@' /etc/ocserv/ocserv.conf
 #save custom-configuration files or not ,del password
     sed -i '/password=/d' $CONFIG_PATH_VARS
+    sed -i '/export fqdnname=/d' $CONFIG_PATH_VARS
     save_user_vars=${save_user_vars:-n}
     if [ $save_user_vars = "n" ] ; then
         rm -rf $CONFIG_PATH_VARS
@@ -594,7 +600,9 @@ function get_new_userca {
     ca_login="y"
     self_signed_ca="y"
     add_a_user
+    press_any_key
     ca_login_ocserv
+    clear
     echo -e "\033[41;37m Your p12-cert's password is \033[0m" "$password"
     print_warn " You could get user-${name_user_ca}.p12 from /root."
     print_warn " You should import the certificate to your device at first."
@@ -633,6 +641,7 @@ function revoke_userca {
 #show
     mv ${revoke_ca} revoke/
     /etc/init.d/ocserv restart
+    clear
     print_info "${revoke_ca} was revoked."
     echo    
 }
