@@ -21,6 +21,11 @@ When you change the profiles,restart the vpn server.
 /etc/init.d/ocserv restart
 ```
 
+You can get help 
+```shell
+bash ocservauto.sh h
+```
+
 ============
 
 ##LICENCE
@@ -32,7 +37,7 @@ SSLVPNauto For Debian Copyright (C) Alex Fang frjalex@gmail.com released under G
 
 
 
-    Copyright (C) 2014  liyangyijie
+    Copyright (C) 2015  liyangyijie
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
