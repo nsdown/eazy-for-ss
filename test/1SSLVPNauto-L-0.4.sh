@@ -323,7 +323,7 @@ Pin: release jessie
 Pin-Priority: 60
 EOF
 #sources check @ check Required 源检测在前面 增加压缩必须包
-    oc_dependencies="build-essential pkg-config make gcc m4 gnutls-bin libgmp3-dev libwrap0-dev libpam0g-dev libdbus-1-dev libnl-route-3-dev libopts25-dev libnl-nf-3-dev libseccomp-dev libreadline-dev libpcl1-dev autogen libtalloc-dev"
+    oc_dependencies="build-essential pkg-config make gcc m4 gnutls-bin libgmp3-dev libwrap0-dev libpam0g-dev libdbus-1-dev libnl-route-3-dev libopts25-dev libnl-nf-3-dev libreadline-dev libpcl1-dev autogen libtalloc-dev"
     TEST_S=""
     Dependencies_install_onebyone
 #add test source 
@@ -331,7 +331,7 @@ EOF
     echo "deb http://ftp.debian.org/debian jessie main contrib non-free" >> /etc/apt/sources.list
     apt-get update
 #install dependencies from wheezy-backports
-    oc_dependencies="libgnutls28-dev"
+    oc_dependencies="libgnutls28-dev libseccomp-dev"
     TEST_S="-t wheezy-backports"
     Dependencies_install_onebyone
 #install dependencies from jessie
