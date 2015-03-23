@@ -332,7 +332,7 @@ EOF
     echo "deb http://ftp.debian.org/debian jessie main contrib non-free" >> /etc/apt/sources.list
     apt-get update
 #install dependencies from wheezy-backports
-    oc_dependencies="libgnutls28-dev  libseccomp-dev"
+    oc_dependencies="libgnutls28-dev libseccomp-dev"
     TEST_S="-t wheezy-backports"
     Dependencies_install_onebyone
 #install dependencies from jessie
