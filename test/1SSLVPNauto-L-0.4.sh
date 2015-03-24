@@ -62,9 +62,9 @@ function Default_Ask(){
     Temp_var_name=$3
 #rewrite $ok
     if [  -f ${CONFIG_PATH_VARS} ] ; then
-        New_temp_default_var=`cat $CONFIG_PATH_VARS | grep "export $Temp_var_name=" | cut -d "'" -f 2`
+        New_temp_default_var=`cat $CONFIG_PATH_VARS | grep "^$Temp_var_name=" | cut -d "'" -f 2`
         Temp_default_var=${New_temp_default_var:-$Temp_default_var}
-        sed -i "/export $Temp_var_name=/d" $CONFIG_PATH_VARS
+        sed -i "/^${Temp_var_name}=/d" $CONFIG_PATH_VARS
     fi
 #if yes or no 
     echo -e -n "\e[1;36m$Temp_question\e[0m""\033[31m(Default:$Temp_default_var): \033[0m"
@@ -83,9 +83,10 @@ function Default_Ask(){
         esac
     else
         Temp_var=${Temp_var:-$Temp_default_var}        
-    fi    
-    echo "export $Temp_var_name='$Temp_var'" >> $CONFIG_PATH_VARS
-    . $CONFIG_PATH_VARS 
+    fi
+    Temp_cmd="$Temp_var_name='$Temp_var'"
+    eval $Temp_cmd
+    echo $Temp_cmd >> $CONFIG_PATH_VARS
     echo
     print_info "Your answer is : ${Temp_var}"
     echo
@@ -199,7 +200,7 @@ function check_Required {
     oc_D_V=`expr $(cat /etc/debian_version | cut -d. -f1)`
     if [ $oc_D_V -lt 7 ]
     then
-        die "Your system is debian $oc_D_V. Only for Debian 7+"
+        die "Looks like your system is debian $oc_D_V. Only for Debian 7+"
     fi
     print_info "Debian version ok"
 #check install 防止重复安装
@@ -233,8 +234,8 @@ function check_Required {
     print_info "Sources ok"
 #get profiles from net 从网络中获取配置
     print_info "Getting default port from net......"
-    ocserv_tcpport_Default=$(wget -qO- --no-check-certificate https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/ocserv.conf | grep '^tcp-port' | sed 's/tcp-port = //g')
-    ocserv_udpport_Default=$(wget -qO- --no-check-certificate https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/ocserv.conf | grep '^udp-port' | sed 's/udp-port = //g')
+    ocserv_tcpport_Default=$(wget -qO- --no-check-certificate $OC_CONF_NET_DOC/ocserv.conf | grep '^tcp-port' | sed 's/tcp-port = //g')
+    ocserv_udpport_Default=$(wget -qO- --no-check-certificate $OC_CONF_NET_DOC/ocserv.conf | grep '^udp-port' | sed 's/udp-port = //g')
     OC_version_latest=$(curl -s "http://www.infradead.org/ocserv/download.html" | sed -n 's/^.*version is <b>\(.*$\)/\1/p')
     print_info "Get profiles ok"
     clear
@@ -373,17 +374,17 @@ function tar_ocserv_install(){
         die "Ocserv install failure,check dependencies!"
     fi
 #mv files
-    mkdir -p /etc/ocserv/CAforOC/revoke
-    cp doc/profile.xml /etc/ocserv
+    mkdir -p $OC_LC_DOC/CAforOC/revoke
+    cp doc/profile.xml $OC_LC_DOC
     cp doc/dbus/org.infradead.ocserv.conf /etc/dbus-1/system.d
     cd ..
     rm -rf ocserv-$oc_version
 #get config file from net
-    cd /etc/ocserv
-    wget https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/ocserv.conf --no-check-certificate
-    wget https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/start-ocserv-sysctl.sh  --no-check-certificate
-    wget https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/stop-ocserv-sysctl.sh  --no-check-certificate
-    wget https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/ocserv  --no-check-certificate
+    cd $OC_LC_DOC
+    wget $OC_CONF_NET_DOC/ocserv.conf --no-check-certificate
+    wget $OC_CONF_NET_DOC/start-ocserv-sysctl.sh  --no-check-certificate
+    wget $OC_CONF_NET_DOC/stop-ocserv-sysctl.sh  --no-check-certificate
+    wget $OC_CONF_NET_DOC/ocserv  --no-check-certificate
     chmod 755 ocserv
     mv ocserv /etc/init.d
     chmod +x start-ocserv-sysctl.sh
@@ -393,7 +394,7 @@ function tar_ocserv_install(){
 
 function make_ocserv_ca {
 #all in one doc
-    cd /etc/ocserv/CAforOC
+    cd $OC_LC_DOC/CAforOC
 #Self-signed CA set
 #ca's name #organization name#company name#server's FQDN
     caname=${caname:-ocvpn}
@@ -428,15 +429,15 @@ _EOF_
     if [ ! -f server-cert.pem ] || [ ! -f server-key.pem ]; then	
         die "server-cert.pem or server-key.pem NOT Found , make failure!"
     fi
-    cp server-cert.pem /etc/ocserv && cp server-key.pem /etc/ocserv
-    cp ca-cert.pem /etc/ocserv && cp ca-cert.pem /root
+    cp server-cert.pem $OC_LC_DOC && cp server-key.pem $OC_LC_DOC
+    cp ca-cert.pem $OC_LC_DOC && cp ca-cert.pem /root
     print_info "Self-signed CA for ocserv ok , you could get the ca-cert.pem from /root"
 }
 
 function ca_login_ocserv {
 #make a client cert
     print_info "Making a client cert..."
-    cd /etc/ocserv/CAforOC
+    cd $OC_LC_DOC/CAforOC
     caname=`cat ca.tmpl | grep cn | cut -d '"' -f 2`
     if [ "X${caname}" = "X" ]; then
         Default_Ask "Tell me your CA's name." "ocvpn" "caname"
@@ -480,35 +481,33 @@ EOF
 function set_ocserv_conf(){
 #set port
     if [ "$ocserv_tcpport_set" != "" ]; then
-        sed -i "s@tcp-port = $ocserv_tcpport_Default@tcp-port = $ocserv_tcpport_set@g" /etc/ocserv/ocserv.conf
+        sed -i "s@tcp-port = $ocserv_tcpport_Default@tcp-port = $ocserv_tcpport_set@g" $OC_LC_FILE
     fi
     if [ "$ocserv_udpport_set" != "" ]; then
-        sed -i "s@udp-port = $ocserv_udpport_Default@udp-port = $ocserv_udpport_set@g" /etc/ocserv/ocserv.conf
+        sed -i "s@udp-port = $ocserv_udpport_Default@udp-port = $ocserv_udpport_set@g" $OC_LC_FILE
     fi
 #default domain 
-    sed -i "s@#default-domain = example.com@default-domain = $fqdnname@" /etc/ocserv/ocserv.conf 
+    sed -i "s@#default-domain = example.com@default-domain = $fqdnname@" $OC_LC_FILE 
 #boot from the start 开机自启
     if [ "$ocserv_boot_start" = "y" ]; then
         sudo insserv ocserv
     fi
 #add a user 增加一个初始用户
     if [ "$ca_login" = "n" ]; then
-    (echo "$password"; sleep 1; echo "$password") | ocpasswd -c "/etc/ocserv/ocpasswd" $username
+    (echo "$password"; sleep 1; echo "$password") | ocpasswd -c "$OC_LC_DOC/ocpasswd" $username
     fi
 #set only tcp-port 仅仅使用tcp端口
     if [ "$only_tcp_port" = "y" ]; then
-        sed -i 's@udp-port = @#udp-port = @g' /etc/ocserv/ocserv.conf
+        sed -i 's@udp-port = @#udp-port = @g' $OC_LC_FILE
     fi
 #set ca_login
     if [ "$ca_login" = "y" ]; then
-        sed -i 's@auth = "plain@#auth = "plain@g' /etc/ocserv/ocserv.conf
-        sed -i 's@#auth = "certificate"@auth = "certificate"@' /etc/ocserv/ocserv.conf
-        sed -i 's@#ca-cert = /path/to/ca.pem@ca-cert = /etc/ocserv/ca-cert.pem@' /etc/ocserv/ocserv.conf
-        sed -i 's@#crl = /path/to/crl.pem@crl = /etc/ocserv/crl.pem@' /etc/ocserv/ocserv.conf
-        sed -i 's@#cert-user-oid = 2.5.4.3@cert-user-oid = 2.5.4.3@' /etc/ocserv/ocserv.conf
+        sed -i 's@auth = "plain@#auth = "plain@g' $OC_LC_FILE
+        sed -i 's@#auth = "certificate"@auth = "certificate"@' $OC_LC_FILE
+        sed -i 's@#ca-cert = /path/to/ca.pem@ca-cert = $OC_LC_DOC/ca-cert.pem@' $OC_LC_FILE
+        sed -i 's@#crl = /path/to/crl.pem@crl = $OC_LC_DOC/crl.pem@' $OC_LC_FILE
+        sed -i 's@#cert-user-oid = @cert-user-oid = @' $OC_LC_FILE
     fi
-#compression 开启压缩
-    sed -i 's@#compression = true@compression = true@' /etc/ocserv/ocserv.conf
 #save custom-configuration files or not ,del password
     sed -i '/password=/d' $CONFIG_PATH_VARS
     sed -i '/export fqdnname=/d' $CONFIG_PATH_VARS
@@ -535,7 +534,7 @@ function stop_ocserv(){
 }
 
 function start_ocserv(){
-    if [ ! -f /etc/ocserv/server-cert.pem ] || [ ! -f /etc/ocserv/server-key.pem ]; then
+    if [ ! -f $OC_LC_DOC/server-cert.pem ] || [ ! -f $OC_LC_DOC/server-key.pem ]; then
         die "server-cert.pem or server-key.pem NOT Found !!!"
     fi
 #start
@@ -543,7 +542,7 @@ function start_ocserv(){
 }
 
 function show_ocserv(){
-    ocserv_port=`cat /etc/ocserv/ocserv.conf | grep '^tcp-port' | sed 's/tcp-port = //g'`
+    ocserv_port=`cat $OC_LC_FILE | grep '^tcp-port' | sed 's/tcp-port = //g'`
     clear
     ps -ef | grep -v grep | grep -v ps | grep -i '/usr/sbin/ocserv' > /dev/null 2>&1
     if [ $? -eq 0 ]; then
@@ -562,7 +561,7 @@ function show_ocserv(){
             echo -e "\033[41;37m Your server domain is \033[0m" "$fqdnname:$ocserv_port"
             echo -e "\033[41;37m Your username is \033[0m" "$username"
             echo -e "\033[41;37m Your password is \033[0m" "$password"
-            print_warn " You could use ' sudo ocpasswd -c /etc/ocserv/ocpasswd username ' to add users. "
+            print_warn " You could use ' sudo ocpasswd -c $OC_LC_DOC/ocpasswd username ' to add users. "
             print_warn " You could stop ocserv by ' /etc/init.d/ocserv stop '!"
             print_warn " Boot from the start or not, use ' sudo insserv ocserv ' or ' sudo insserv -r ocserv '."
             echo ""    
@@ -571,17 +570,17 @@ function show_ocserv(){
         fi
     elif [ "$self_signed_ca" = "n" -a "$ca_login" = "n" ]; then    
         print_warn " 1,You should change Server Certificate and Server Key's name to server-cert.pem and server-key.pem !!!"
-        print_warn " 2,You should put them to /etc/ocserv !!!"
+        print_warn " 2,You should put them to $OC_LC_DOC !!!"
         print_warn " 3,You should start ocserv by ' /etc/init.d/ocserv start '!"
-        print_warn " 4,You could use ' sudo ocpasswd -c /etc/ocserv/ocpasswd username ' to add users."
+        print_warn " 4,You could use ' sudo ocpasswd -c $OC_LC_DOC/ocpasswd username ' to add users."
         print_warn " 5,Boot from the start or not, use ' sudo insserv ocserv ' or ' sudo insserv -r ocserv '."
         echo -e "\033[41;37m Your username is \033[0m" "$username"
         echo -e "\033[41;37m Your password is \033[0m" "$password"
     elif [ "$self_signed_ca" = "n" -a "$ca_login" = "y" ]; then
         print_warn " 1,You should change your Server Certificate and Server Key's name to server-cert.pem and server-key.pem !!!"
         print_warn " 2,You should change your Certificate Authority Certificates and Certificate Authority Key's  name to ca-cert.pem and ca-key.pem!!!"
-        print_warn " 3,You should put server-cert.pem server-key.pem and ca-cert.pem to /etc/ocserv !!!"
-        print_warn " 4,You should put ca-cert.pem and ca-key.pem to /etc/ocserv/CAforOC !!!"
+        print_warn " 3,You should put server-cert.pem server-key.pem and ca-cert.pem to $OC_LC_DOC !!!"
+        print_warn " 4,You should put ca-cert.pem and ca-key.pem to $OC_LC_DOC/CAforOC !!!"
         print_warn " 5,You should use ' bash `basename $0` gc ' to get a client cert !!!"
         print_warn " 6,You could start ocserv by ' /etc/init.d/ocserv start '!"
         print_warn " 7,Boot from the start or not, use ' sudo insserv ocserv ' or ' sudo insserv -r ocserv '."
@@ -594,7 +593,7 @@ function get_new_userca {
     if [ ! -f /usr/sbin/ocserv ]; then
         die "Ocserv NOT Found !!!"
     fi
-    if [ ! -f /etc/ocserv/CAforOC/ca-cert.pem ] || [ ! -f /etc/ocserv/CAforOC/ca-key.pem ]; then
+    if [ ! -f $OC_LC_DOC/CAforOC/ca-cert.pem ] || [ ! -f $OC_LC_DOC/CAforOC/ca-key.pem ]; then
         die "ca-cert.pem or ca-key.pem NOT Found !!!"
     fi
     ca_login="y"
@@ -613,11 +612,11 @@ function revoke_userca {
     then
         die "Ocserv NOT Found !!!"
     fi
-    if [ ! -f /etc/ocserv/CAforOC/ca-cert.pem ] || [ ! -f /etc/ocserv/CAforOC/ca-key.pem ]; then
+    if [ ! -f $OC_LC_DOC/CAforOC/ca-cert.pem ] || [ ! -f $OC_LC_DOC/CAforOC/ca-key.pem ]; then
         die "ca-key.pem or ca-cert.pem NOT Found !!!"
     fi
 #get info
-    cd /etc/ocserv/CAforOC
+    cd $OC_LC_DOC/CAforOC
     clear
     print_xxxx
     print_info "The following is the user list..."
@@ -627,7 +626,7 @@ function revoke_userca {
     print_info "Which user do you want to revoke?"
     echo
 	read -p "Which: " -e -i user- revoke_ca
-    if [ ! -f /etc/ocserv/CAforOC/$revoke_ca/$revoke_ca-cert.pem ]
+    if [ ! -f $OC_LC_DOC/CAforOC/$revoke_ca/$revoke_ca-cert.pem ]
     then
         die "$revoke_ca NOT Found !!!"
     fi
@@ -648,7 +647,7 @@ function revoke_userca {
 
 function reinstall_ocserv {
     stop_ocserv
-    rm -rf /etc/ocserv
+    rm -rf $OC_LC_DOC
     rm -rf /etc/dbus-1/system.d/org.infradead.ocserv.conf
     rm -rf /usr/sbin/ocserv
     rm -rf /etc/init.d/ocserv
@@ -691,6 +690,9 @@ echo "==========================================================================
 #vars 
 #fastmode vars 脚本参数 可以保存配置下次快速部署
 CONFIG_PATH_VARS="/root/ocservauto_vars"
+OC_CONF_NET_DOC="https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto"
+OC_LC_DOC="/etc/ocserv"
+OC_LC_FILE="$OC_LC_DOC/ocserv.conf"
 
 #Initialization step
 action=$1
