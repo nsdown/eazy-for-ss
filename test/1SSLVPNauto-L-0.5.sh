@@ -444,10 +444,11 @@ function ca_login_ocserv {
         Default_Ask "Tell me your CA's name." "ocvpn" "caname"
     fi
     name_user_ca=$(get_random_word 4)
-    if [ -d user-${name_user_ca} ];then
-        name_user_ca=$(get_random_word 8)${name_user_ca}
-    fi
-    cat << _EOF_ > user.tmpl
+    while [ -d user-${name_user_ca} ]; do
+        name_user_ca=$(get_random_word 4)
+    done
+    mkdir user-${name_user_ca}
+    cat << _EOF_ > user-${name_user_ca}/user.tmpl
 cn = "Client ${name_user_ca}"
 unit = "Client"
 expiration_days = 7777
@@ -455,16 +456,11 @@ signing_key
 tls_www_client
 _EOF_
 #user key
-    certtool --generate-privkey --outfile user-key.pem
+    certtool --generate-privkey --outfile user-${name_user_ca}/user-${name_user_ca}-key.pem
 #user cert
-    certtool --generate-certificate --load-privkey user-key.pem --load-ca-certificate ca-cert.pem --load-ca-privkey ca-key.pem --template user.tmpl --outfile user-cert.pem
+    certtool --generate-certificate --load-privkey user-${name_user_ca}/user-${name_user_ca}-key.pem --load-ca-certificate ca-cert.pem --load-ca-privkey ca-key.pem --template user-${name_user_ca}/user.tmpl --outfile user-${name_user_ca}/user-${name_user_ca}-cert.pem
 #p12
-    openssl pkcs12 -export -inkey user-key.pem -in user-cert.pem -name "Client ${name_user_ca}" -certfile ca-cert.pem -caname "$caname" -out user.p12 -passout pass:$password
-#rename
-    mkdir user-${name_user_ca}
-    mv user-key.pem user-${name_user_ca}/user-${name_user_ca}-key.pem
-    mv user-cert.pem user-${name_user_ca}/user-${name_user_ca}-cert.pem
-    mv user.p12 user-${name_user_ca}/user-${name_user_ca}.p12
+    openssl pkcs12 -export -inkey user-${name_user_ca}/user-${name_user_ca}-key.pem -in user-${name_user_ca}/user-${name_user_ca}-cert.pem -name "Client ${name_user_ca}" -certfile ca-cert.pem -caname "$caname" -out user-${name_user_ca}/user-${name_user_ca}.p12 -passout pass:$password
 #cp to root
     cp user-${name_user_ca}/user-${name_user_ca}.p12 /root
 #make a empty revocation list
