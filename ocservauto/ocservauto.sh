@@ -281,7 +281,7 @@ function get_Custom_configuration(){
 function add_a_user(){
 #get username,4 figures default
     if [ "$ca_login" = "n" ]; then
-        fast_Default_Ask "Input your username for ocserv:" "$(get_random_word 4)" "username"
+        Default_Ask "Input your username for ocserv:" "$(get_random_word 4)" "username"
 #get password,6 figures default
         Default_Ask "Input your password for ocserv:" "$(get_random_word 6)" "password"
         sed -i '/password=/d' $CONFIG_PATH_VARS
