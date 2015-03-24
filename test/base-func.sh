@@ -37,10 +37,10 @@ function Default_Ask(){
     CONFIG_PATH_VARS=${CONFIG_PATH_VARS:-$(Get_shell_path)/temp_vars}
 #rewrite $ok
     if [  -f ${CONFIG_PATH_VARS} ] ; then
-        New_temp_default_var=`cat $CONFIG_PATH_VARS | grep "export $Temp_var_name=" | cut -d "'" -f 2`
+        New_temp_default_var=`cat $CONFIG_PATH_VARS | grep "^$Temp_var_name=" | cut -d "'" -f 2`
         Temp_default_var=${New_temp_default_var:-$Temp_default_var}
 #"变量替换有效 '变量不替换
-        sed -i "/export $Temp_var_name=/d" $CONFIG_PATH_VARS
+        sed -i "/^${Temp_var_name}=/d" $CONFIG_PATH_VARS
     fi
 #if yes or no 
     echo -e -n "\e[1;36m$Temp_question\e[0m""\033[31m(Default:$Temp_default_var): \033[0m"
@@ -59,9 +59,11 @@ function Default_Ask(){
         esac
     else
         Temp_var=${Temp_var:-$Temp_default_var}        
-    fi    
-    echo "export $Temp_var_name='$Temp_var'" >> $CONFIG_PATH_VARS
-    . $CONFIG_PATH_VARS
+    fi
+    Temp_cmd="$Temp_var_name='$Temp_var'"
+    eval $Temp_cmd
+    echo $Temp_cmd >> $CONFIG_PATH_VARS
+#    . $CONFIG_PATH_VARS
     echo
     print_info "Your answer is : ${Temp_var}"
     echo
