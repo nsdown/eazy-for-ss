@@ -235,8 +235,8 @@ function check_Required {
     print_info "Sources ok"
 #get profiles from net 从网络中获取配置
     print_info "Getting default port from net......"
-    ocserv_tcpport_Default=$(wget -qO- --no-check-certificate https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/ocserv.conf | grep '^tcp-port' | sed 's/tcp-port = //g')
-    ocserv_udpport_Default=$(wget -qO- --no-check-certificate https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/ocserv.conf | grep '^udp-port' | sed 's/udp-port = //g')
+    ocserv_tcpport_Default=$(wget -qO- --no-check-certificate $OC_CONF_NET_DOC/ocserv.conf | grep '^tcp-port' | sed 's/tcp-port = //g')
+    ocserv_udpport_Default=$(wget -qO- --no-check-certificate $OC_CONF_NET_DOC/ocserv.conf | grep '^udp-port' | sed 's/udp-port = //g')
     OC_version_latest=$(curl -s "http://www.infradead.org/ocserv/download.html" | sed -n 's/^.*version is <b>\(.*$\)/\1/p')
     print_info "Get profiles ok"
     clear
@@ -246,7 +246,7 @@ function get_Custom_configuration(){
 #whether to make a Self-signed CA 是否需要制作自签名证书
     fast_Default_Ask "Make a Self-signed CA for your server?(y/n)" "y" "self_signed_ca"
     if [ "$self_signed_ca" = "n" ]; then
-        fast_Default_Ask "Input your own domain for ocserv:" "$ocserv_hostname" "fqdnname"
+        Default_Ask "Input your own domain for ocserv:" "$ocserv_hostname" "fqdnname"
     else 
 #get CA's name
         fast_Default_Ask "Your CA's name:" "ocvpn" "caname"
@@ -382,10 +382,10 @@ function tar_ocserv_install(){
     rm -rf ocserv-$oc_version
 #get config file from net
     cd /etc/ocserv
-    wget https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/ocserv.conf --no-check-certificate
-    wget https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/start-ocserv-sysctl.sh  --no-check-certificate
-    wget https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/stop-ocserv-sysctl.sh  --no-check-certificate
-    wget https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/ocserv  --no-check-certificate
+    wget $OC_CONF_NET_DOC/ocserv.conf --no-check-certificate
+    wget $OC_CONF_NET_DOC/start-ocserv-sysctl.sh  --no-check-certificate
+    wget $OC_CONF_NET_DOC/stop-ocserv-sysctl.sh  --no-check-certificate
+    wget $OC_CONF_NET_DOC/ocserv  --no-check-certificate
     chmod 755 ocserv
     mv ocserv /etc/init.d
     chmod +x start-ocserv-sysctl.sh
@@ -693,6 +693,7 @@ echo "==========================================================================
 #vars 
 #fastmode vars 脚本参数 可以保存配置下次快速部署
 CONFIG_PATH_VARS="/root/ocservauto_vars"
+OC_CONF_NET_DOC="https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto"
 
 #Initialization step
 action=$1
