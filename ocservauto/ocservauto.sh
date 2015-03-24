@@ -513,7 +513,7 @@ function set_ocserv_conf(){
     sed -i 's@#compression = true@compression = true@' /etc/ocserv/ocserv.conf
 #save custom-configuration files or not ,del password
     sed -i '/password=/d' $CONFIG_PATH_VARS
-    sed -i '/export fqdnname=/d' $CONFIG_PATH_VARS
+    sed -i '/fqdnname=/d' $CONFIG_PATH_VARS
     save_user_vars=${save_user_vars:-n}
     if [ $save_user_vars = "n" ] ; then
         rm -rf $CONFIG_PATH_VARS
