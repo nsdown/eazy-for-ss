@@ -704,6 +704,7 @@ install)
     ;;
 fastmode | fm)
     fast_install="y"
+    [ ! -f $CONFIG_PATH_VARS ] && die "$CONFIG_PATH_VARS Not Found !"
     . $CONFIG_PATH_VARS
     install_OpenConnect_VPN_server
     ;;
