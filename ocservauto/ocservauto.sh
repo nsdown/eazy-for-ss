@@ -445,8 +445,8 @@ function ca_login_ocserv {
     fi
     name_user_ca=$(get_random_word 4)
     while [ -d user-${name_user_ca} ]; do
-+       name_user_ca=$(get_random_word 4)
-+   done
+        name_user_ca=$(get_random_word 4)
+    done
     mkdir user-${name_user_ca}
     cat << _EOF_ > user.tmpl
 cn = "Client ${name_user_ca}"
