@@ -4,7 +4,7 @@ These are pdnsd's profiles.You cloud use these configurations to build a public 
 Well,Just need to overwrite the old one.
 ##Additional information
 About China's domains, we could get from
-https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf
+https://github.com/felixonmars/dnsmasq-china-list
 
 And command
 ```shell
