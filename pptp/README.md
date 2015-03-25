@@ -4,4 +4,4 @@ wget https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/pptp/pptp
 bash pptpauto.sh
 ```
 ##WARN
-这东西不是为了穿墙用的，但是可以给国内的vps开一个当跳板玩玩。
+这东西不是为了穿墙用的，但是可以给国内的vps(debian)开一个当跳板玩玩。
