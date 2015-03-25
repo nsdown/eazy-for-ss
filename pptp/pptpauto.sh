@@ -34,14 +34,6 @@ function Default_Ask(){
     Temp_question=$1
     Temp_default_var=$2
     Temp_var_name=$3
-#default path ./temp_vars
-    CONFIG_PATH_VARS=${CONFIG_PATH_VARS:-$(Get_shell_path)/temp_vars}
-#load form vars files
-    if [  -f ${CONFIG_PATH_VARS} ] ; then
-        New_temp_default_var=`cat $CONFIG_PATH_VARS | grep "export $Temp_var_name=" | cut -d "'" -f 2`
-        Temp_default_var=${New_temp_default_var:-$Temp_default_var}
-        sed -i "/export $Temp_var_name=/d" $CONFIG_PATH_VARS
-    fi
 #if yes or no 
     echo -e -n "\e[1;36m$Temp_question\e[0m""\033[31m(Default:$Temp_default_var): \033[0m"
     read Temp_var
@@ -59,9 +51,9 @@ function Default_Ask(){
         esac
     else
         Temp_var=${Temp_var:-$Temp_default_var}        
-    fi    
-    echo "export $Temp_var_name='$Temp_var'" >> $CONFIG_PATH_VARS
-    . $CONFIG_PATH_VARS
+    fi
+    Temp_cmd="$Temp_var_name='$Temp_var'"
+    eval $Temp_cmd
     echo
     print_info "Your answer is : ${Temp_var}"
     echo
@@ -93,15 +85,6 @@ function get_random_word(){
 #$1 figures
     for i in `seq 1 $1`; do str="$str${arr[$RANDOM%$index]}"; done
     echo $str
-}
-
-#shell path 获取当前脚本路径
-function Get_shell_path {
-    Now_work_path=`pwd`
-    cd `dirname $0`
-    This_shell_path=`pwd`
-    cd $Now_work_path
-    echo $This_shell_path
 }
 
 ###################################################################################################################
@@ -166,7 +149,6 @@ function creat_user {
     Default_Ask "Input your username" "$(get_random_word 3)" "u"
     Default_Ask "Input your password" "$(get_random_word 6)" "p"
     press_any_key
-    rm -rf $CONFIG_PATH_VARS
     if [ -f /etc/ppp/chap-secrets ] && [ -f /etc/init.d/pptpd ] ; then
         echo "$u pptpd $p *" >> /etc/ppp/chap-secrets
         clear
