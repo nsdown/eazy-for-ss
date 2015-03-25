@@ -444,9 +444,10 @@ function ca_login_ocserv {
         Default_Ask "Tell me your CA's name." "ocvpn" "caname"
     fi
     name_user_ca=$(get_random_word 4)
-    if [ -d user-${name_user_ca} ];then
-        name_user_ca=$(get_random_word 8)${name_user_ca}
-    fi
+    while [ -d user-${name_user_ca} ]; do
++        name_user_ca=$(get_random_word 4)
++   done
+    mkdir user-${name_user_ca}
     cat << _EOF_ > user.tmpl
 cn = "Client ${name_user_ca}"
 unit = "Client"
@@ -461,7 +462,6 @@ _EOF_
 #p12
     openssl pkcs12 -export -inkey user-key.pem -in user-cert.pem -name "Client ${name_user_ca}" -certfile ca-cert.pem -caname "$caname" -out user.p12 -passout pass:$password
 #rename
-    mkdir user-${name_user_ca}
     mv user-key.pem user-${name_user_ca}/user-${name_user_ca}-key.pem
     mv user-cert.pem user-${name_user_ca}/user-${name_user_ca}-cert.pem
     mv user.p12 user-${name_user_ca}/user-${name_user_ca}.p12
