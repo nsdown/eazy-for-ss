@@ -1,12 +1,22 @@
+#这是一个脚本自动生成的证书登录的配置，一般保存在root目录下
+#是否自定义安装
 Custom_config_ocserv='y'
+#是否自签证书
 self_signed_ca='y'
 caname='ocvpn'
 ogname='ocvpn'
 coname='ocvpn'
+#最大路由表数目
 max_router='6000'
+#tcp端口选择
 ocserv_tcpport_set='999'
+#只采用tcp模式 关闭udp端口
 only_tcp_port='y'
+#是否开机自起
 ocserv_boot_start='y'
+#是否证书登录
 ca_login='y'
+#安装版本
 oc_version='0.10.1'
+#是否保存本配置文件
 save_user_vars='y'
