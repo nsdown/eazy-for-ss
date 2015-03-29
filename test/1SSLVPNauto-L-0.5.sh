@@ -368,13 +368,14 @@ function tar_ocserv_install(){
 #have to use "" then $ work ,set router limit 0.10.0版本默认96条目
     D_MAX_ROUTER=`cat src/vpn.h | grep MAX_CONFIG_ENTRIES`
     sed -i "s/$D_MAX_ROUTER/#define MAX_CONFIG_ENTRIES $max_router/g" src/vpn.h
-    ./configure --prefix=/usr --sysconfdir=/etc && make && make install
+    ./configure --prefix=/usr --sysconfdir=/etc 2>/root/ocerror.log && make && make install
 #check install 检测编译安装是否成功
     if [ ! -f /usr/sbin/ocserv ]
     then
         die "Ocserv install failure,check dependencies!"
     fi
 #mv files
+#    rm -rf /root/ocerror.log
     mkdir -p /etc/ocserv/CAforOC/revoke
     cp doc/profile.xml /etc/ocserv
     cp doc/dbus/org.infradead.ocserv.conf /etc/dbus-1/system.d
