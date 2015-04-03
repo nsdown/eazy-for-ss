@@ -1,5 +1,5 @@
 #! /bin/bash
-
+#客户端证书日期自定义
 #===============================================================================================
 #   System Required:  Debian 7+
 #   Description:  Install OpenConnect VPN server for Debian
