@@ -334,14 +334,15 @@ EOF
     echo "deb http://ftp.debian.org/debian jessie main contrib non-free" >> /etc/apt/sources.list
     apt-get update
 #install dependencies from wheezy-backports
-    oc_dependencies="libgnutls28-dev libseccomp-dev"
+#    oc_dependencies="libgnutls28-dev libseccomp-dev"
+    oc_dependencies="libgnutls28-dev libseccomp-dev liblz4-dev"
     TEST_S="-t wheezy-backports"
     Dependencies_install_onebyone
 #install dependencies from jessie
 #    oc_dependencies="libprotobuf-c-dev libhttp-parser-dev liblz4-dev" #虽然可以完善编译项目 但是意义不大
-    oc_dependencies="liblz4-dev"
-    TEST_S="-t jessie"
-    Dependencies_install_onebyone
+#    oc_dependencies="liblz4-dev"
+#   TEST_S="-t jessie"
+#    Dependencies_install_onebyone
 #if sources del 如果本来没有测试源便删除
     if [ "$oc_wheezy_backports" = "n" ]; then
         sed -i '/wheezy-backports/d' /etc/apt/sources.list
