@@ -350,10 +350,10 @@ EOF
 #    Dependencies_install_onebyone
 #install lz4 form github 采取编译安装
     print_info "Installing lz4 from github"
-    cd /root
+    mkdir -p /usr/src/lz4
+    cd /usr/src
     LZ4_VERSION=`curl "https://github.com/Cyan4973/lz4/releases/latest" | sed -n 's/^.*tag\/\(.*\)".*/\1/p'` 
     curl -SL "https://github.com/Cyan4973/lz4/archive/$LZ4_VERSION.tar.gz" -o lz4.tar.gz
-    mkdir lz4
     tar -xf lz4.tar.gz -C lz4 --strip-components=1 
     rm lz4.tar.gz 
     cd lz4 
@@ -377,6 +377,7 @@ EOF
 }
 #install 编译安装
 function tar_ocserv_install(){
+    cd /root
 #default max route rulers
     max_router=${max_router:-200}
 #default version is 0.10.1 默认版本是为0.10.1
