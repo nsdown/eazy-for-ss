@@ -349,7 +349,7 @@ EOF
     oc_dependencies="liblz4-dev"
 #force-lz4
     oc_force_lz4=${oc_force_lz4:-n}
-    if [ oc_force_lz4 = "y" ] ; then        
+    if [ $oc_force_lz4 = "y" ] ; then        
         TEST_S="-t jessie"
         Dependencies_install_onebyone
     else
