@@ -87,7 +87,6 @@ function Default_Ask(){
     Temp_cmd="$Temp_var_name='$Temp_var'"
     eval $Temp_cmd
     echo $Temp_cmd >> $CONFIG_PATH_VARS
-#    . $CONFIG_PATH_VARS 
     echo
     print_info "Your answer is : ${Temp_var}"
     echo
@@ -126,7 +125,7 @@ function fast_Default_Ask(){
 
 #install 安装主体
 function install_OpenConnect_VPN_server(){
-#check system , get IP and port ,del test sources 检测系统 获取本机公网ip、默认验证端口 去除测试源
+#check system , get IP and ocversion ,del test sources 检测系统 获取本机公网ip 最新版本 去除测试源
     check_Required
 	
 #custom-configuration or not 自定义安装与否
@@ -164,7 +163,7 @@ function install_OpenConnect_VPN_server(){
     make_ocserv_ca
     fi
 
-#make a client cert 制作证书登录	
+#make a client cert 若证书登录则制作客户端证书	
     if [ "$ca_login" = "y" ] && [ "$self_signed_ca" = "y" ]; then
     ca_login_ocserv	
     fi
@@ -198,10 +197,15 @@ function check_Required {
     fi
     print_info "Debian ok"
 #only Debian 7+
-    oc_D_V=`expr $(cat /etc/debian_version | cut -d. -f1)`
-    if [ $oc_D_V -lt 7 ]
-    then
-        die "Your system is debian $oc_D_V. Only for Debian 7+"
+    expr $(cat /etc/debian_version | cut -d. -f1) + 0 > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        oc_D_V=`expr $(cat /etc/debian_version | cut -d. -f1)`
+        if [ $oc_D_V -lt 7 ]
+        then
+            die "Your system is debian $oc_D_V. Only for Debian 7+"
+        fi
+    else
+        print_info "only test ubuntu 14.04"
     fi
     print_info "Debian version ok"
 #check install 防止重复安装
@@ -234,9 +238,7 @@ function check_Required {
     fi
     print_info "Sources ok"
 #get profiles from net 从网络中获取配置
-    print_info "Getting default port from net......"
-    ocserv_tcpport_Default=$(wget -qO- --no-check-certificate $OC_CONF_NET_DOC/ocserv.conf | grep '^tcp-port' | sed 's/tcp-port = //g')
-    ocserv_udpport_Default=$(wget -qO- --no-check-certificate $OC_CONF_NET_DOC/ocserv.conf | grep '^udp-port' | sed 's/udp-port = //g')
+    print_info "Getting default profiles from net......"
     OC_version_latest=$(curl -s "http://www.infradead.org/ocserv/download.html" | sed -n 's/^.*version is <b>\(.*$\)/\1/p')
     print_info "Get profiles ok"
     clear
@@ -260,12 +262,12 @@ function get_Custom_configuration(){
 #set max router rulers 最大路由规则限制数目
     fast_Default_Ask "The maximum number of routing table rules?" "200" "max_router"
 #which port to use for verification 选择验证端口
-    fast_Default_Ask "Which port to use for verification?(Tcp-Port)" "$ocserv_tcpport_Default" "ocserv_tcpport_set"
+    fast_Default_Ask "Which port to use for verification?(Tcp-Port)" "999" "ocserv_tcpport_set"
 #tcp-port only or not 是否仅仅使用tcp端口，即是否禁用udp
     fast_Default_Ask "Only use tcp-port or not?(y/n)" "n" "only_tcp_port"
 #which port to use for data transmission 选择udp端口 即专用数据传输的udp端口
     if [ "$only_tcp_port" = "n" ]; then
-        fast_Default_Ask "Which port to use for data transmission?(Udp-Port)" "$ocserv_udpport_Default" "ocserv_udpport_set"
+        fast_Default_Ask "Which port to use for data transmission?(Udp-Port)" "1999" "ocserv_udpport_set"
     fi
 #boot from the start 是否开机自起
     fast_Default_Ask "Start ocserv when system is started?(y/n)" "y" "ocserv_boot_start"
@@ -273,6 +275,8 @@ function get_Custom_configuration(){
     fast_Default_Ask "Whether to choose the certificate login?(y/n)" "n" "ca_login"
 #Which ocserv version to install 安装哪个版本的ocserv
     fast_Default_Ask "$OC_version_latest is the latest ocserv version,but default version is recommended.Which to choose?" "0.10.1" "oc_version"
+#Force lz4 or not
+    fast_Default_Ask "Install liblz4-dev from jessie ,maybe it can destroy your system." "n" "oc_force_lz4"
 #Save user vars or not 是否保存脚本参数 以便于下次快速配置
     fast_Default_Ask "Save the vars for fast mode or not?" "n" "save_user_vars"
 }
@@ -290,6 +294,8 @@ function add_a_user(){
     if [ "$ca_login" = "y" ] && [ "$self_signed_ca" = "y" ]; then
         Default_Ask "Input your password for your p12-cert file:" "$(get_random_word 4)" "password"
         sed -i '/password=/d' $CONFIG_PATH_VARS
+#get expiration days for client p12-cert
+        Default_Ask "Input the number of expiration days for your p12-cert file:" "7777" "oc_ex_days"
     fi
 }
 #dependencies onebyone
@@ -310,9 +316,12 @@ function pre_install(){
 #keep kernel 防止某些情况下内核升级
     echo linux-image-`uname -r` hold | sudo dpkg --set-selections
     apt-get upgrade -y
-#no update from test sources
+#no update from test sources 不升级不安装测试源其他包
     if [ ! -d /etc/apt/preferences.d ];then
         mkdir /etc/apt/preferences.d
+    fi
+    if [ ! -d /etc/apt/apt.conf.d ];then
+        mkdir /etc/apt/apt.conf.d
     fi
     cat > /etc/apt/preferences.d/my_ocserv_preferences<<EOF
 Package: *
@@ -325,8 +334,12 @@ Package: *
 Pin: release jessie
 Pin-Priority: 60
 EOF
-#sources check @ check Required 源检测在前面 增加压缩必须包
-    oc_dependencies="build-essential pkg-config make gcc m4 gnutls-bin libgmp3-dev libwrap0-dev libpam0g-dev libdbus-1-dev libnl-route-3-dev libopts25-dev libnl-nf-3-dev libreadline-dev libpcl1-dev autogen libtalloc-dev"
+    cat > /etc/apt/apt.conf.d/77ocserv<<EOF
+APT::Install-Recommends "false";
+APT::Install-Suggests "false";
+EOF
+#sources check @ check Required 源检测在前面 for ubuntu+3
+    oc_dependencies="build-essential pkg-config make gcc m4 gnutls-bin libgmp3-dev libwrap0-dev libpam0g-dev libdbus-1-dev libnl-route-3-dev libopts25-dev libnl-nf-3-dev libreadline-dev libpcl1-dev autogen libtalloc-dev libgnutls28-dev libseccomp-dev liblz4-dev"
     TEST_S=""
     Dependencies_install_onebyone
 #add test source 
@@ -335,14 +348,19 @@ EOF
     apt-get update
 #install dependencies from wheezy-backports
     oc_dependencies="libgnutls28-dev libseccomp-dev"
-#    oc_dependencies="libgnutls28-dev libseccomp-dev liblz4-dev"
     TEST_S="-t wheezy-backports"
     Dependencies_install_onebyone
-#install dependencies from jessie
-#    oc_dependencies="libprotobuf-c-dev libhttp-parser-dev liblz4-dev" #虽然可以完善编译项目 但是意义不大
+#install dependencies lz4  增加压缩必须包
     oc_dependencies="liblz4-dev"
-    TEST_S="-t jessie"
-    Dependencies_install_onebyone
+#force-lz4
+    oc_force_lz4=${oc_force_lz4:-n}
+    if [ $oc_force_lz4 = "y" ] ; then        
+        TEST_S="-t jessie --force-yes"
+        Dependencies_install_onebyone
+    else
+        TEST_S="-t wheezy-backports"
+        Dependencies_install_onebyone
+    fi
 #if sources del 如果本来没有测试源便删除
     if [ "$oc_wheezy_backports" = "n" ]; then
         sed -i '/wheezy-backports/d' /etc/apt/sources.list
@@ -351,7 +369,8 @@ EOF
         sed -i '/jessie/d' /etc/apt/sources.list
     fi
 #keep update
-    rm -rf /etc/apt/preferences.d/my_ocserv_preferences
+    rm -f /etc/apt/preferences.d/my_ocserv_preferences
+    rm -f /etc/apt/apt.conf.d/77ocserv
     apt-get update
     print_info "Dependencies  ok"
 }
@@ -369,29 +388,158 @@ function tar_ocserv_install(){
 #have to use "" then $ work ,set router limit 0.10.0版本默认96条目
     D_MAX_ROUTER=`cat src/vpn.h | grep MAX_CONFIG_ENTRIES`
     sed -i "s/$D_MAX_ROUTER/#define MAX_CONFIG_ENTRIES $max_router/g" src/vpn.h
-    ./configure --prefix=/usr --sysconfdir=/etc 2>/root/ocerror.log && make && make install
+    ./configure --prefix=/usr --sysconfdir=/etc 2>/root/ocerror.log
+    make 2>>/root/ocerror.log
+    make install
 #check install 检测编译安装是否成功
     if [ ! -f /usr/sbin/ocserv ]
     then
         die "Ocserv install failure,check dependencies!"
     fi
 #mv files
-    rm -rf /root/ocerror.log
+    rm -f /root/ocerror.log
     mkdir -p /etc/ocserv/CAforOC/revoke
     cp doc/profile.xml /etc/ocserv
     cp doc/dbus/org.infradead.ocserv.conf /etc/dbus-1/system.d
     cd ..
     rm -rf ocserv-$oc_version
-#get config file from net
+#get or set config file
     cd /etc/ocserv
-    wget $OC_CONF_NET_DOC/ocserv.conf --no-check-certificate
-    wget $OC_CONF_NET_DOC/start-ocserv-sysctl.sh  --no-check-certificate
-    wget $OC_CONF_NET_DOC/stop-ocserv-sysctl.sh  --no-check-certificate
-    wget $OC_CONF_NET_DOC/ocserv  --no-check-certificate
-    chmod 755 ocserv
-    mv ocserv /etc/init.d
+    cat > /etc/init.d/ocserv <<'EOF'
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          ocserv
+# Required-Start:    $network $local_fs $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+### END INIT INFO
+# Copyright Rene Mayrhofer, Gibraltar, 1999
+# This script is distibuted under the GPL
+ 
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+DAEMON=/usr/sbin/ocserv
+PIDFILE=/var/run/ocserv.pid
+DAEMON_ARGS="-c /etc/ocserv/ocserv.conf"
+
+# Exit if the package is not installed
+[ -x $DAEMON ] || exit 0
+ 
+case "$1" in
+start)
+if [ ! -r $PIDFILE ]; then
+echo -n "Starting OpenConnect VPN Server Daemon: "
+. /etc/ocserv/start-ocserv-sysctl.sh
+start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON -- \
+$DAEMON_ARGS > /dev/null
+echo "[ok]"
+else
+echo -n "OpenConnect VPN Server is already running.\n\r"
+exit 0
+fi
+;;
+stop)
+echo -n "Stopping OpenConnect VPN Server Daemon: "
+. /etc/ocserv/stop-ocserv-sysctl.sh
+start-stop-daemon --stop --quiet --pidfile $PIDFILE --exec $DAEMON
+echo "[ok]"
+rm -f $PIDFILE
+;;
+force-reload|restart)
+echo "Restarting OpenConnect VPN Server: "
+$0 stop
+sleep 3
+$0 start
+;;
+status)
+if [ ! -r $PIDFILE ]; then
+echo "no pid file, process doesn't seem to be running correctly"
+exit 3
+fi
+PID=`cat $PIDFILE | sed 's/ //g'`
+EXE=/proc/$PID/exe
+if [ -x "$EXE" ] &&
+[ "`ls -l \"$EXE\" | cut -d'>' -f2,2 | cut -d' ' -f2,2`" = \
+"$DAEMON" ]; then
+echo "ok, process seems to be running"
+exit 0
+elif [ -r $PIDFILE ]; then
+echo "process not running, but pidfile exists"
+exit 1
+else
+echo "no lock file to check for, so simply return the stopped status"
+exit 3
+fi
+;;
+*)
+echo "Usage: /etc/init.d/ocserv {start|stop|restart|force-reload|status}"
+exit 1
+;;
+esac
+
+:
+EOF
+    chmod 755 /etc/init.d/ocserv
+    cat > start-ocserv-sysctl.sh <<'EOF'
+#!/bin/bash
+
+#vars
+OCSERV_CONFIG="/etc/ocserv/ocserv.conf"
+
+# turn on IP forwarding
+#sysctl -w net.ipv6.conf.all.forwarding=1 > /dev/null 2>&1
+sysctl -w net.ipv4.ip_forward=1 > /dev/null 2>&1
+
+#get gateway and profiles
+gw_intf_oc=`ip route show | grep '^default' | sed -e 's/.* dev \([^ ]*\).*/\1/'`
+ocserv_tcpport=`cat $OCSERV_CONFIG | grep '^tcp-' |  cut -d ' ' -f 3`
+ocserv_udpport=`cat $OCSERV_CONFIG | grep '^udp-' |  cut -d ' ' -f 3`
+ocserv_ip4_work_mask=`cat $OCSERV_CONFIG | grep '^ipv4-' | cut -d ' ' -f 3 | sed 'N;s|\n|/|g'`
+
+# turn on NAT over default gateway and VPN
+if !(iptables-save -t nat | grep -q "$gw_intf_oc (ocserv)"); then
+iptables -t nat -A POSTROUTING -s $ocserv_ip4_work_mask -o $gw_intf_oc -m comment --comment "$gw_intf_oc (ocserv)" -j MASQUERADE
+fi
+
+if !(iptables-save -t filter | grep -q "$gw_intf_oc (ocserv2)"); then
+iptables -A FORWARD -s $ocserv_ip4_work_mask -m comment --comment "$gw_intf_oc (ocserv2)" -j ACCEPT
+fi
+
+if !(iptables-save -t filter | grep -q "$gw_intf_oc (ocserv3)"); then
+iptables -A INPUT -p tcp --dport $ocserv_tcpport -m comment --comment "$gw_intf_oc (ocserv3)" -j ACCEPT
+fi
+
+if [ "$ocserv_udpport" != "" ]; then
+    if !(iptables-save -t filter | grep -q "$gw_intf_oc (ocserv4)"); then
+        iptables -A INPUT -p udp --dport $ocserv_udpport -m comment --comment "$gw_intf_oc (ocserv4)" -j ACCEPT
+    fi
+fi
+
+# turn on MSS fix
+# MSS = MTU - TCP header - IP header
+if !(iptables-save -t mangle | grep -q "$gw_intf_oc (ocserv5)"); then
+iptables -t mangle -A FORWARD -p tcp -m tcp --tcp-flags SYN,RST SYN -m comment --comment "$gw_intf_oc (ocserv5)" -j TCPMSS --clamp-mss-to-pmtu
+fi
+
+echo "..."
+EOF
     chmod +x start-ocserv-sysctl.sh
+    cat > stop-ocserv-sysctl.sh <<'EOF'
+#! /bin/bash
+
+# uncomment if you want to turn off IP forwarding
+# sysctl -w net.ipv4.ip_forward=0
+
+#del iptables
+
+iptables-save | grep 'ocserv' | sed 's/^-A P/iptables -t nat -D P/' | sed 's/^-A FORWARD -p/iptables -t mangle -D FORWARD -p/' | sed 's/^-A/iptables -D/' | bash
+
+echo "..."
+EOF
     chmod +x stop-ocserv-sysctl.sh
+    while [ ! -f ocserv.conf ]; do
+        wget $OC_CONF_NET_DOC/ocserv.conf --no-check-certificate
+    done    
     print_info "Ocserv install ok"
 }
 
@@ -450,23 +598,20 @@ function ca_login_ocserv {
         name_user_ca=$(get_random_word 4)
     done
     mkdir user-${name_user_ca}
-    cat << _EOF_ > user.tmpl
+    oc_ex_days=${oc_ex_days:-7777}
+    cat << _EOF_ > user-${name_user_ca}/user.tmpl
 cn = "Client ${name_user_ca}"
 unit = "Client"
-expiration_days = 7777
+expiration_days = ${oc_ex_days}
 signing_key
 tls_www_client
 _EOF_
 #user key
-    certtool --generate-privkey --outfile user-key.pem
+    certtool --generate-privkey --outfile user-${name_user_ca}/user-${name_user_ca}-key.pem
 #user cert
-    certtool --generate-certificate --load-privkey user-key.pem --load-ca-certificate ca-cert.pem --load-ca-privkey ca-key.pem --template user.tmpl --outfile user-cert.pem
+    certtool --generate-certificate --load-privkey user-${name_user_ca}/user-${name_user_ca}-key.pem --load-ca-certificate ca-cert.pem --load-ca-privkey ca-key.pem --template user-${name_user_ca}/user.tmpl --outfile user-${name_user_ca}/user-${name_user_ca}-cert.pem
 #p12
-    openssl pkcs12 -export -inkey user-key.pem -in user-cert.pem -name "Client ${name_user_ca}" -certfile ca-cert.pem -caname "$caname" -out user.p12 -passout pass:$password
-#rename
-    mv user-key.pem user-${name_user_ca}/user-${name_user_ca}-key.pem
-    mv user-cert.pem user-${name_user_ca}/user-${name_user_ca}-cert.pem
-    mv user.p12 user-${name_user_ca}/user-${name_user_ca}.p12
+    openssl pkcs12 -export -inkey user-${name_user_ca}/user-${name_user_ca}-key.pem -in user-${name_user_ca}/user-${name_user_ca}-cert.pem -name "Client ${name_user_ca}" -certfile ca-cert.pem -caname "$caname" -out user-${name_user_ca}/user-${name_user_ca}.p12 -passout pass:$password
 #cp to root
     cp user-${name_user_ca}/user-${name_user_ca}.p12 /root
 #make a empty revocation list
@@ -483,14 +628,15 @@ EOF
 #set 设定相关参数
 function set_ocserv_conf(){
 #set port
-    if [ "$ocserv_tcpport_set" != "" ]; then
-        sed -i "s@tcp-port = $ocserv_tcpport_Default@tcp-port = $ocserv_tcpport_set@g" /etc/ocserv/ocserv.conf
-    fi
-    if [ "$ocserv_udpport_set" != "" ]; then
-        sed -i "s@udp-port = $ocserv_udpport_Default@udp-port = $ocserv_udpport_set@g" /etc/ocserv/ocserv.conf
-    fi
-#default domain 
-    sed -i "s@#default-domain = example.com@default-domain = $fqdnname@" /etc/ocserv/ocserv.conf 
+    ocserv_tcpport_set=${ocserv_tcpport_set:-999}
+    ocserv_udpport_set=${ocserv_udpport_set:-1999}
+    save_user_vars=${save_user_vars:-n}
+    ocserv_boot_start=${ocserv_boot_start:-y}
+    only_tcp_port=${only_tcp_port:-n}
+    sed -i "s|\(tcp-port = \).*|\1$ocserv_tcpport_set|" /etc/ocserv/ocserv.conf
+    sed -i "s|\(udp-port = \).*|\1$ocserv_udpport_set|" /etc/ocserv/ocserv.conf
+#default domain
+    sed -i "s|^#\(default-domain = \).*|\1$fqdnname|" /etc/ocserv/ocserv.conf 
 #boot from the start 开机自启
     if [ "$ocserv_boot_start" = "y" ]; then
         sudo insserv ocserv
@@ -501,22 +647,18 @@ function set_ocserv_conf(){
     fi
 #set only tcp-port 仅仅使用tcp端口
     if [ "$only_tcp_port" = "y" ]; then
-        sed -i 's@udp-port = @#udp-port = @g' /etc/ocserv/ocserv.conf
+        sed -i 's@udp-port = @#udp-port = @' /etc/ocserv/ocserv.conf
     fi
 #set ca_login
     if [ "$ca_login" = "y" ]; then
-        sed -i 's@auth = "plain@#auth = "plain@g' /etc/ocserv/ocserv.conf
+        sed -i 's@auth = "plain@#auth = "plain@' /etc/ocserv/ocserv.conf
         sed -i 's@#auth = "certificate"@auth = "certificate"@' /etc/ocserv/ocserv.conf
-        sed -i 's@#ca-cert = /path/to/ca.pem@ca-cert = /etc/ocserv/ca-cert.pem@' /etc/ocserv/ocserv.conf
-        sed -i 's@#crl = /path/to/crl.pem@crl = /etc/ocserv/crl.pem@' /etc/ocserv/ocserv.conf
-        sed -i 's@#cert-user-oid = 2.5.4.3@cert-user-oid = 2.5.4.3@' /etc/ocserv/ocserv.conf
+        sed -i 's|^#\(ca-cert = \).*|\1/etc/ocserv/ca-cert.pem|' /etc/ocserv/ocserv.conf
+        sed -i 's|^#\(crl = \).*|\1/etc/ocserv/crl.pem|' /etc/ocserv/ocserv.conf
+        sed -i 's|^#\(cert-user-oid = \).*|\12.5.4.3|' /etc/ocserv/ocserv.conf
     fi
-#compression 开启压缩
-    sed -i 's@#compression = true@compression = true@' /etc/ocserv/ocserv.conf
-#save custom-configuration files or not ,del password
-    sed -i '/password=/d' $CONFIG_PATH_VARS
+#save custom-configuration files or not ,del fqdnname
     sed -i '/fqdnname=/d' $CONFIG_PATH_VARS
-    save_user_vars=${save_user_vars:-n}
     if [ $save_user_vars = "n" ] ; then
         rm -rf $CONFIG_PATH_VARS
     fi
@@ -555,6 +697,7 @@ function show_ocserv(){
             echo ""
             echo -e "\033[41;37m Your server domain is \033[0m" "$fqdnname:$ocserv_port"
             echo -e "\033[41;37m Your p12-cert's password is \033[0m" "$password"
+            echo -e "\033[41;37m Your p12-cert's number of expiration days is \033[0m" "$oc_ex_days"
             print_warn " You could get user-${name_user_ca}.p12 from /root."
             print_warn " You could stop ocserv by ' /etc/init.d/ocserv stop '!"
             print_warn " Boot from the start or not, use ' sudo insserv ocserv ' or ' sudo insserv -r ocserv '."
@@ -608,6 +751,7 @@ function get_new_userca {
     ca_login_ocserv
     clear
     echo -e "\033[41;37m Your p12-cert's password is \033[0m" "$password"
+    echo -e "\033[41;37m Your p12-cert's number of expiration days is \033[0m" "$oc_ex_days"
     print_warn " You could get user-${name_user_ca}.p12 from /root."
     print_warn " You should import the certificate to your device at first."
 }
@@ -644,8 +788,6 @@ function revoke_userca {
     certtool --generate-crl --load-ca-privkey ca-key.pem --load-ca-certificate ca-cert.pem --load-certificate revoked.pem --template crl.tmpl --outfile ../crl.pem
 #show
     mv ${revoke_ca} revoke/
-    /etc/init.d/ocserv restart
-    clear
     print_info "${revoke_ca} was revoked."
     echo    
 }
