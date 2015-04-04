@@ -197,10 +197,15 @@ function check_Required {
     fi
     print_info "Debian ok"
 #only Debian 7+
-    oc_D_V=`expr $(cat /etc/debian_version | cut -d. -f1)`
-    if [ $oc_D_V -lt 7 ]
-    then
-        die "Your system is debian $oc_D_V. Only for Debian 7+"
+    expr $(cat /etc/debian_version | cut -d. -f1) + 0 > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        oc_D_V=`expr $(cat /etc/debian_version | cut -d. -f1)`
+        if [ $oc_D_V -lt 7 ]
+        then
+            die "Your system is debian $oc_D_V. Only for Debian 7+"
+        fi
+    else
+        print_info "only test ubuntu 14.04"
     fi
     print_info "Debian version ok"
 #check install 防止重复安装
@@ -333,8 +338,8 @@ EOF
 APT::Install-Recommends "false";
 APT::Install-Suggests "false";
 EOF
-#sources check @ check Required 源检测在前面
-    oc_dependencies="build-essential pkg-config make gcc m4 gnutls-bin libgmp3-dev libwrap0-dev libpam0g-dev libdbus-1-dev libnl-route-3-dev libopts25-dev libnl-nf-3-dev libreadline-dev libpcl1-dev autogen libtalloc-dev"
+#sources check @ check Required 源检测在前面 for ubuntu+3
+    oc_dependencies="build-essential pkg-config make gcc m4 gnutls-bin libgmp3-dev libwrap0-dev libpam0g-dev libdbus-1-dev libnl-route-3-dev libopts25-dev libnl-nf-3-dev libreadline-dev libpcl1-dev autogen libtalloc-dev libgnutls28-dev libseccomp-dev liblz4-dev"
     TEST_S=""
     Dependencies_install_onebyone
 #add test source 
