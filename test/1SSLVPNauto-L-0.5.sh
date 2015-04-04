@@ -287,7 +287,8 @@ function add_a_user(){
     if [ "$ca_login" = "y" ] && [ "$self_signed_ca" = "y" ]; then
         Default_Ask "Input your password for your p12-cert file:" "$(get_random_word 4)" "password"
         sed -i '/password=/d' $CONFIG_PATH_VARS
-        Default_Ask "Input the expiration days for your p12-cert file:" "7777" "oc_ex_days"
+#get expiration days for client p12-cert
+        Default_Ask "Input the number of expiration days for your p12-cert file:" "7777" "oc_ex_days"
     fi
 }
 #dependencies onebyone
@@ -331,8 +332,8 @@ Pin: release jessie
 Pin-Priority: 60
 EOF
     cat > /etc/apt/apt.conf.d/77ocserv<<EOF
-APT::Get::Install-Recommends "false";
-APT::Get::Install-Suggests "false";
+APT::Install-Recommends "false";
+APT::Install-Suggests "false";
 EOF
 #add test source 
     echo "deb http://ftp.debian.org/debian wheezy-backports main contrib non-free" >> /etc/apt/sources.list
@@ -344,9 +345,22 @@ EOF
     Dependencies_install_onebyone
 #install dependencies from jessie  增加压缩必须包
 #    oc_dependencies="libprotobuf-c-dev libhttp-parser-dev liblz4-dev" #虽然可以完善编译项目 但是意义不大
-    oc_dependencies="liblz4-dev"
-    TEST_S="-t jessie"
-    Dependencies_install_onebyone
+#    oc_dependencies="liblz4-dev"
+#    TEST_S="-t jessie"
+#    Dependencies_install_onebyone
+#install lz4 form github 采取编译安装
+    print_info "Installing lz4 from github"
+    cd /root
+    LZ4_VERSION=`curl "https://github.com/Cyan4973/lz4/releases/latest" | sed -n 's/^.*tag\/\(.*\)".*/\1/p'` 
+    curl -SL "https://github.com/Cyan4973/lz4/archive/$LZ4_VERSION.tar.gz" -o lz4.tar.gz 
+    tar -xf lz4.tar.gz -C lz4 --strip-components=1 
+    rm lz4.tar.gz 
+    cd lz4 
+    make -j"$(nproc)" 
+    make install
+    cd ..
+    rm -r lz4
+    print_info "[lz4] ok"
 #if sources del 如果本来没有测试源便删除
     if [ "$oc_wheezy_backports" = "n" ]; then
         sed -i '/wheezy-backports/d' /etc/apt/sources.list
@@ -362,7 +376,6 @@ EOF
 }
 #install 编译安装
 function tar_ocserv_install(){
-    cd /root
 #default max route rulers
     max_router=${max_router:-200}
 #default version is 0.10.1 默认版本是为0.10.1
@@ -374,14 +387,16 @@ function tar_ocserv_install(){
 #have to use "" then $ work ,set router limit 0.10.0版本默认96条目
     D_MAX_ROUTER=`cat src/vpn.h | grep MAX_CONFIG_ENTRIES`
     sed -i "s/$D_MAX_ROUTER/#define MAX_CONFIG_ENTRIES $max_router/g" src/vpn.h
-    ./configure --prefix=/usr --sysconfdir=/etc 2>/root/ocerror.log && make && make install
+    ./configure --prefix=/usr --sysconfdir=/etc --enable-linux-namespaces 2>/root/ocerror.log
+    make 2>>/root/ocerror.log
+    make install
 #check install 检测编译安装是否成功
     if [ ! -f /usr/sbin/ocserv ]
     then
         die "Ocserv install failure,check dependencies!"
     fi
 #mv files
-    rm -rf /root/ocerror.log
+    rm -f /root/ocerror.log
     mkdir -p /etc/ocserv/CAforOC/revoke
     cp doc/profile.xml /etc/ocserv
     cp doc/dbus/org.infradead.ocserv.conf /etc/dbus-1/system.d
@@ -408,13 +423,6 @@ DAEMON_ARGS="-c /etc/ocserv/ocserv.conf"
 
 # Exit if the package is not installed
 [ -x $DAEMON ] || exit 0
-
-#check ca
-if [ ! -f /etc/ocserv/server-cert.pem ] || [ ! -f /etc/ocserv/server-key.pem ]; then
-	echo "CA or KEY NOT Found !!!"
-	exit 1
-fi
-
  
 case "$1" in
 start)
@@ -621,10 +629,13 @@ function set_ocserv_conf(){
 #set port
     ocserv_tcpport_set=${ocserv_tcpport_set:-999}
     ocserv_udpport_set=${ocserv_udpport_set:-1999}
-    sed -i "s@^tcp-port.*$@tcp-port = $ocserv_tcpport_set@" /etc/ocserv/ocserv.conf
-    sed -i "s@^udp-port.*$@udp-port = $ocserv_udpport_set@" /etc/ocserv/ocserv.conf
-#default domain 
-    sed -i "s@#default-domain = example.com@default-domain = $fqdnname@" /etc/ocserv/ocserv.conf 
+    save_user_vars=${save_user_vars:-n}
+    ocserv_boot_start=${ocserv_boot_start:-y}
+    only_tcp_port=${only_tcp_port:-n}
+    sed -i "s|\(tcp-port = \).*|\1$ocserv_tcpport_set|" /etc/ocserv/ocserv.conf
+    sed -i "s|\(udp-port = \).*|\1$ocserv_udpport_set|" /etc/ocserv/ocserv.conf
+#default domain
+    sed -i "s|^#\(default-domain = \).*|\1$fqdnname|" /etc/ocserv/ocserv.conf 
 #boot from the start 开机自启
     if [ "$ocserv_boot_start" = "y" ]; then
         sudo insserv ocserv
@@ -635,19 +646,18 @@ function set_ocserv_conf(){
     fi
 #set only tcp-port 仅仅使用tcp端口
     if [ "$only_tcp_port" = "y" ]; then
-        sed -i 's@udp-port = @#udp-port = @g' /etc/ocserv/ocserv.conf
+        sed -i 's@udp-port = @#udp-port = @' /etc/ocserv/ocserv.conf
     fi
 #set ca_login
     if [ "$ca_login" = "y" ]; then
-        sed -i 's@auth = "plain@#auth = "plain@g' /etc/ocserv/ocserv.conf
+        sed -i 's@auth = "plain@#auth = "plain@' /etc/ocserv/ocserv.conf
         sed -i 's@#auth = "certificate"@auth = "certificate"@' /etc/ocserv/ocserv.conf
-        sed -i 's@#ca-cert = /path/to/ca.pem@ca-cert = /etc/ocserv/ca-cert.pem@' /etc/ocserv/ocserv.conf
-        sed -i 's@#crl = /path/to/crl.pem@crl = /etc/ocserv/crl.pem@' /etc/ocserv/ocserv.conf
-        sed -i 's@#cert-user-oid = 2.5.4.3@cert-user-oid = 2.5.4.3@' /etc/ocserv/ocserv.conf
+        sed -i 's|^#\(ca-cert = \).*|\1/etc/ocserv/ca-cert.pem|' /etc/ocserv/ocserv.conf
+        sed -i 's|^#\(crl = \).*|\1/etc/ocserv/crl.pem|' /etc/ocserv/ocserv.conf
+        sed -i 's|^#\(cert-user-oid = \).*|\12.5.4.3|' /etc/ocserv/ocserv.conf
     fi
-#save custom-configuration files or not ,del password
+#save custom-configuration files or not ,del fqdnname
     sed -i '/fqdnname=/d' $CONFIG_PATH_VARS
-    save_user_vars=${save_user_vars:-n}
     if [ $save_user_vars = "n" ] ; then
         rm -rf $CONFIG_PATH_VARS
     fi
@@ -686,6 +696,7 @@ function show_ocserv(){
             echo ""
             echo -e "\033[41;37m Your server domain is \033[0m" "$fqdnname:$ocserv_port"
             echo -e "\033[41;37m Your p12-cert's password is \033[0m" "$password"
+            echo -e "\033[41;37m Your p12-cert's number of expiration days is \033[0m" "$oc_ex_days"
             print_warn " You could get user-${name_user_ca}.p12 from /root."
             print_warn " You could stop ocserv by ' /etc/init.d/ocserv stop '!"
             print_warn " Boot from the start or not, use ' sudo insserv ocserv ' or ' sudo insserv -r ocserv '."
@@ -739,6 +750,7 @@ function get_new_userca {
     ca_login_ocserv
     clear
     echo -e "\033[41;37m Your p12-cert's password is \033[0m" "$password"
+    echo -e "\033[41;37m Your p12-cert's number of expiration days is \033[0m" "$oc_ex_days"
     print_warn " You could get user-${name_user_ca}.p12 from /root."
     print_warn " You should import the certificate to your device at first."
 }
@@ -775,8 +787,6 @@ function revoke_userca {
     certtool --generate-crl --load-ca-privkey ca-key.pem --load-ca-certificate ca-cert.pem --load-certificate revoked.pem --template crl.tmpl --outfile ../crl.pem
 #show
     mv ${revoke_ca} revoke/
-    /etc/init.d/ocserv restart
-    clear
     print_info "${revoke_ca} was revoked."
     echo    
 }
