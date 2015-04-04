@@ -590,7 +590,7 @@ function ca_login_ocserv {
     done
     mkdir user-${name_user_ca}
     oc_ex_days=${oc_ex_days:-7777}
-    cat << _EOF_ > user.tmpl
+    cat << _EOF_ > user-${name_user_ca}/user.tmpl
 cn = "Client ${name_user_ca}"
 unit = "Client"
 expiration_days = ${oc_ex_days}
