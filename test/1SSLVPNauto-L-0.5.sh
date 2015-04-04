@@ -352,7 +352,8 @@ EOF
     print_info "Installing lz4 from github"
     cd /root
     LZ4_VERSION=`curl "https://github.com/Cyan4973/lz4/releases/latest" | sed -n 's/^.*tag\/\(.*\)".*/\1/p'` 
-    curl -SL "https://github.com/Cyan4973/lz4/archive/$LZ4_VERSION.tar.gz" -o lz4.tar.gz 
+    curl -SL "https://github.com/Cyan4973/lz4/archive/$LZ4_VERSION.tar.gz" -o lz4.tar.gz
+    mkdir lz4
     tar -xf lz4.tar.gz -C lz4 --strip-components=1 
     rm lz4.tar.gz 
     cd lz4 
