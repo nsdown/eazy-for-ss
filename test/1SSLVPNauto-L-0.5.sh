@@ -270,6 +270,8 @@ function get_Custom_configuration(){
     fast_Default_Ask "Whether to choose the certificate login?(y/n)" "n" "ca_login"
 #Which ocserv version to install 安装哪个版本的ocserv
     fast_Default_Ask "$OC_version_latest is the latest ocserv version,but default version is recommended.Which to choose?" "0.10.1" "oc_version"
+#Force lz4 or not
+    fast_Default_Ask "Install liblz4-dev from jessie ,maybe it can destroy your system." "n" "oc_force_lz4"
 #Save user vars or not 是否保存脚本参数 以便于下次快速配置
     fast_Default_Ask "Save the vars for fast mode or not?" "n" "save_user_vars"
 }
@@ -309,10 +311,6 @@ function pre_install(){
 #keep kernel 防止某些情况下内核升级
     echo linux-image-`uname -r` hold | sudo dpkg --set-selections
     apt-get upgrade -y
-#sources check @ check Required 源检测在前面
-    oc_dependencies="build-essential pkg-config make gcc m4 gnutls-bin libgmp3-dev libwrap0-dev libpam0g-dev libdbus-1-dev libnl-route-3-dev libopts25-dev libnl-nf-3-dev libreadline-dev libpcl1-dev autogen libtalloc-dev"
-    TEST_S=""
-    Dependencies_install_onebyone
 #no update from test sources 不升级不安装测试源其他包
     if [ ! -d /etc/apt/preferences.d ];then
         mkdir /etc/apt/preferences.d
@@ -335,6 +333,10 @@ EOF
 APT::Install-Recommends "false";
 APT::Install-Suggests "false";
 EOF
+#sources check @ check Required 源检测在前面
+    oc_dependencies="build-essential pkg-config make gcc m4 gnutls-bin libgmp3-dev libwrap0-dev libpam0g-dev libdbus-1-dev libnl-route-3-dev libopts25-dev libnl-nf-3-dev libreadline-dev libpcl1-dev autogen libtalloc-dev"
+    TEST_S=""
+    Dependencies_install_onebyone
 #add test source 
     echo "deb http://ftp.debian.org/debian wheezy-backports main contrib non-free" >> /etc/apt/sources.list
     echo "deb http://ftp.debian.org/debian jessie main contrib non-free" >> /etc/apt/sources.list
@@ -343,25 +345,32 @@ EOF
     oc_dependencies="libgnutls28-dev libseccomp-dev"
     TEST_S="-t wheezy-backports"
     Dependencies_install_onebyone
-#install dependencies from jessie  增加压缩必须包
+#install dependencies lz4  增加压缩必须包
 #    oc_dependencies="libprotobuf-c-dev libhttp-parser-dev liblz4-dev" #虽然可以完善编译项目 但是意义不大
-#    oc_dependencies="liblz4-dev"
-#    TEST_S="-t jessie"
-#    Dependencies_install_onebyone
+    oc_dependencies="liblz4-dev"
+#force-lz4
+    oc_force_lz4=${oc_force_lz4:-n}
+    if [ oc_force_lz4 = "y" ] ; then        
+        TEST_S="-t jessie"
+        Dependencies_install_onebyone
+    else
+        TEST_S="-t wheezy-backports"
+        Dependencies_install_onebyone
+    fi
 #install lz4 form github 采取编译安装
-    print_info "Installing lz4 from github"
-    mkdir -p /usr/src/lz4
-    cd /usr/src
-    LZ4_VERSION=`curl "https://github.com/Cyan4973/lz4/releases/latest" | sed -n 's/^.*tag\/\(.*\)".*/\1/p'` 
-    curl -SL "https://github.com/Cyan4973/lz4/archive/$LZ4_VERSION.tar.gz" -o lz4.tar.gz
-    tar -xf lz4.tar.gz -C lz4 --strip-components=1 
-    rm lz4.tar.gz 
-    cd lz4 
-    make -j"$(nproc)" 
-    make install
-    cd ..
-    rm -r lz4
-    print_info "[lz4] ok"
+    # print_info "Installing lz4 from github"
+    # mkdir -p /usr/src/lz4
+    # cd /usr/src
+    # LZ4_VERSION=`curl "https://github.com/Cyan4973/lz4/releases/latest" | sed -n 's/^.*tag\/\(.*\)".*/\1/p'` 
+    # curl -SL "https://github.com/Cyan4973/lz4/archive/$LZ4_VERSION.tar.gz" -o lz4.tar.gz
+    # tar -xf lz4.tar.gz -C lz4 --strip-components=1 
+    # rm lz4.tar.gz 
+    # cd lz4 
+    # make -j"$(nproc)" 
+    # make install
+    # cd ..
+    # rm -r lz4
+    # print_info "[lz4] ok"
 #if sources del 如果本来没有测试源便删除
     if [ "$oc_wheezy_backports" = "n" ]; then
         sed -i '/wheezy-backports/d' /etc/apt/sources.list
