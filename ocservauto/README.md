@@ -1,4 +1,4 @@
-##Ocservauto For Debian 0.4
+##Ocservauto For Debian 0.5
 
 This script may help you setup your own openconnetc_server in debian_7.
 
