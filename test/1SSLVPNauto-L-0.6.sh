@@ -355,7 +355,7 @@ EOF
 #force-lz4
     oc_force_lz4=${oc_force_lz4:-n}
     if [ $oc_force_lz4 = "y" ] ; then        
-        TEST_S="-t jessie"
+        TEST_S="-t jessie --force-yes"
         Dependencies_install_onebyone
     else
         TEST_S="-t wheezy-backports"
