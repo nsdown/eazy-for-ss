@@ -3,7 +3,7 @@
 #===============================================================================================
 #   System Required:  Debian 7+
 #   Description:  Install IPSecIKEv1v2 VPN server for Debian by strongSwan 5
-#   ipsecIKEv1v2auto-0.1 For Debian Copyright (C) liyangyijie released under GNU GPLv2
+#   ipsecIKEv1v2auto-0.1 For Debian Copyright (C) liyangyijie@Gmail released under GNU GPLv2
 #===============================================================================================
 
 clear
@@ -201,9 +201,9 @@ function make_IPSecIKEv1v2_ca(){
 #EXPORT CLIENT CERTIFICATE AS A PKCS#12 FILE
     openssl pkcs12 -export -inkey /etc/ipsec.d/private/ClientKey.pem -in /etc/ipsec.d/certs/ClientCert.pem -name "Client's VPN Certificate" -certfile /etc/ipsec.d/cacerts/strongswanCert.pem -caname "strongSwan Root CA" -out Client.p12 -passout pass:$password
 #MV strongswanKey,PKCS#12 TO ROOT
-    mv Client.p12 /root/
-    cp cacerts/strongswanCert.pem /root/
-    cp certs/ClientCert.pem /root/
+    mv Client.p12 /root
+    cp cacerts/strongswanCert.pem /root
+    cp certs/ClientCert.pem /root
     print_info "CA OK"
 }
 
@@ -224,8 +224,6 @@ config setup
 #default for all 
 conn %default
     ikelifetime=24h
-    ike=aes128-sha256-ecp256,aes256-sha384-ecp384,aes128-sha256-modp2048,aes128-sha1-modp2048,aes256-sha384-modp4096,aes256-sha256-modp4096,aes256-sha1-modp4096,aes128-sha256-modp1536,aes128-sha1-modp1536,aes256-sha384-modp2048,aes256-sha256-modp2048,aes256-sha1-modp2048,aes128-sha256-modp1024,aes128-sha1-modp1024,aes256-sha384-modp1536,aes256-sha256-modp1536,aes256-sha1-modp1536,aes256-sha384-modp1024,aes256-sha256-modp1024,aes256-sha1-modp1024!
-    esp=aes128gcm16-ecp256,aes256gcm16-ecp384,aes128-sha256-ecp256,aes256-sha384-ecp384,aes128-sha256-modp2048,aes128-sha1-modp2048,aes256-sha384-modp4096,aes256-sha256-modp4096,aes256-sha1-modp4096,aes128-sha256-modp1536,aes128-sha1-modp1536,aes256-sha384-modp2048,aes256-sha256-modp2048,aes256-sha1-modp2048,aes128-sha256-modp1024,aes128-sha1-modp1024,aes256-sha384-modp1536,aes256-sha256-modp1536,aes256-sha1-modp1536,aes256-sha384-modp1024,aes256-sha256-modp1024,aes256-sha1-modp1024,aes128gcm16,aes256gcm16,aes128-sha256,aes128-sha1,aes256-sha384,aes256-sha256,aes256-sha1!
     keylife=24h
     dpdaction=clear
     dpdtimeout=3600s
@@ -272,6 +270,7 @@ conn iOS_cert
 
 # for psk mode 
 conn ios_android_xauth_psk
+    fragmentation=yes
     keyexchange=ikev1
     leftauth=psk
     rightauth=psk
@@ -353,10 +352,18 @@ if !(iptables-save -t filter | grep -q "$gw_IPsec (IPSecIKEv1v2_4)"); then
 iptables -A INPUT -p udp --dport 4500 -m comment --comment "$gw_IPsec (IPSecIKEv1v2_4)" -j ACCEPT
 fi
 
+if !(iptables-save -t filter | grep -q "$gw_IPsec (IPSecIKEv1v2_5)"); then
+iptables -A INPUT -p udp --dport 1701 -m comment --comment "$gw_IPsec (IPSecIKEv1v2_5)" -j ACCEPT
+fi
+
+if !(iptables-save -t filter | grep -q "$gw_IPsec (IPSecIKEv1v2_6)"); then
+iptables -A INPUT -p esp -m comment --comment "$gw_IPsec (IPSecIKEv1v2_6)" -j ACCEPT
+fi
+
 # turn on MSS fix
 # MSS = MTU - TCP header - IP header
-if !(iptables-save -t mangle | grep -q "$gw_IPsec (IPSecIKEv1v2_5)"); then
-iptables -t mangle -A FORWARD -p tcp -m tcp --tcp-flags SYN,RST SYN -m comment --comment "$gw_IPsec (IPSecIKEv1v2_5)" -j TCPMSS --clamp-mss-to-pmtu
+if !(iptables-save -t mangle | grep -q "$gw_IPsec (IPSecIKEv1v2_7)"); then
+iptables -t mangle -A FORWARD -p tcp -m tcp --tcp-flags SYN,RST SYN -m comment --comment "$gw_IPsec (IPSecIKEv1v2_7)" -j TCPMSS --clamp-mss-to-pmtu
 fi
 EOF
     chmod +x /etc/ipsec.d/start-ipsec-sysctl.sh
