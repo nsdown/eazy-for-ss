@@ -2,7 +2,7 @@
 
 This script may help you setup your own openconnetc_server in debian_7.
 
-这是一枚适用于deibian_7的openconnect_server安装脚本。
+这是一枚适用于deibian_7的openconnect_server安装脚本。中文详情 [戳这里](http://www.fanyueciyuan.info/fq/ocserv-debian.html)
 
 ============
 
