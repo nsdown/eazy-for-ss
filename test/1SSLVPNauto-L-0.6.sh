@@ -303,9 +303,10 @@ function Dependencies_install_onebyone {
     for OC_DP in $oc_dependencies
     do
         print_info "Installing the $OC_DP "
-        apt-get install -y $TEST_S $OC_DP
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $TEST_S $OC_DP
         if [ $? -eq 0 ]; then
             print_info "[$OC_DP] ok!"
+            apt-get clean
         else
             print_warn "[$OC_DP] not be installed!"
         fi
@@ -316,7 +317,7 @@ function pre_install(){
 #keep kernel 防止某些情况下内核升级
     echo linux-image-`uname -r` hold | sudo dpkg --set-selections
     apt-get upgrade -y
-#no update from test sources 不升级不安装测试源其他包
+#no upgrade from test sources 不升级不安装测试源其他包
     if [ ! -d /etc/apt/preferences.d ];then
         mkdir /etc/apt/preferences.d
     fi
@@ -337,6 +338,8 @@ EOF
     cat > /etc/apt/apt.conf.d/77ocserv<<EOF
 APT::Install-Recommends "false";
 APT::Install-Suggests "false";
+APT::Get::Install-Recommends "false";
+APT::Get::Install-Suggests "false";
 EOF
 #sources check @ check Required 源检测在前面 for ubuntu+3
     oc_dependencies="build-essential pkg-config make gcc m4 gnutls-bin libgmp3-dev libwrap0-dev libpam0g-dev libdbus-1-dev libnl-route-3-dev libopts25-dev libnl-nf-3-dev libreadline-dev libpcl1-dev autogen libtalloc-dev libgnutls28-dev libseccomp-dev liblz4-dev"
@@ -350,12 +353,13 @@ EOF
     oc_dependencies="libgnutls28-dev libseccomp-dev"
     TEST_S="-t wheezy-backports"
     Dependencies_install_onebyone
-#install dependencies lz4  增加压缩必须包
+#install dependencies lz4  增加lz4压缩必须包
+#   oc_dependencies="libprotobuf-c-dev libhttp-parser-dev liblz4-dev"
     oc_dependencies="liblz4-dev"
-#force-lz4
+#force-lz4 from jessie
     oc_force_lz4=${oc_force_lz4:-n}
     if [ $oc_force_lz4 = "y" ] ; then        
-        TEST_S="-t jessie --force-yes"
+        TEST_S="-t jessie -f --force-yes"
         Dependencies_install_onebyone
     else
         TEST_S="-t wheezy-backports"
