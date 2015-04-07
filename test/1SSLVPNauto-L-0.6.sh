@@ -389,9 +389,8 @@ function tar_ocserv_install(){
     tar xvf ocserv-$oc_version.tar.xz
     rm -rf ocserv-$oc_version.tar.xz
     cd ocserv-$oc_version
-#have to use "" then $ work ,set router limit 0.10.0版本默认96条目
-    D_MAX_ROUTER=`cat src/vpn.h | grep MAX_CONFIG_ENTRIES`
-    sed -i "s/$D_MAX_ROUTER/#define MAX_CONFIG_ENTRIES $max_router/g" src/vpn.h
+#have to use "" then $ work ,set router limit 设定路由规则最大限制
+    sed -i "s|\(#define MAX_CONFIG_ENTRIES \).*|\1$max_router|" src/vpn.h
     ./configure --prefix=/usr --sysconfdir=/etc 2>/root/ocerror.log
     make 2>>/root/ocerror.log
     make install
