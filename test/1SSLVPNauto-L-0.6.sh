@@ -391,7 +391,7 @@ function tar_ocserv_install(){
     cd ocserv-$oc_version
 #have to use "" then $ work ,set router limit 设定路由规则最大限制
     sed -i "s|\(#define MAX_CONFIG_ENTRIES \).*|\1$max_router|" src/vpn.h
-    ./configure --prefix=/usr --sysconfdir=/etc 2>/root/ocerror.log
+    ./configure --prefix=/usr --sysconfdir=/etc --with-local-talloc 2>/root/ocerror.log
     make 2>>/root/ocerror.log
     make install
 #check install 检测编译安装是否成功
