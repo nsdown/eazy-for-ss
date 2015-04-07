@@ -318,7 +318,7 @@ function Dependencies_install_onebyone {
 #lz4 from github
 function tar_lz4_install(){
     print_info "Installing lz4 from github"
-    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq remove --purge liblz4-dev
+    DEBIAN_FRONTEND=noninteractive apt-get -y -qq remove --purge liblz4-dev
     mkdir lz4
     LZ4_VERSION=`curl "https://github.com/Cyan4973/lz4/releases/latest" | sed -n 's/^.*tag\/\(.*\)".*/\1/p'` 
     curl -SL "https://github.com/Cyan4973/lz4/archive/$LZ4_VERSION.tar.gz" -o lz4.tar.gz
@@ -330,9 +330,9 @@ function tar_lz4_install(){
     cd ..
     rm -r lz4
     if [ `getconf WORD_BIT` = '32' ] && [ `getconf LONG_BIT` = '64' ] ; then
-        ln -s /usr/local/lib/liblz4.* /usr/lib/x86_64-linux-gnu/
+        ln -sf /usr/local/lib/liblz4.* /usr/lib/x86_64-linux-gnu/
     else
-        ln -s /usr/local/lib/liblz4.* /usr/lib/i386-linux-gnu/
+        ln -sf /usr/local/lib/liblz4.* /usr/lib/i386-linux-gnu/
     fi
     print_info "[lz4] ok"
 }
