@@ -71,10 +71,10 @@ function Default_Ask(){
     read Temp_var
     if [ "$Temp_default_var" = "y" ] || [ "$Temp_default_var" = "n" ] ; then
         case $Temp_var in
-            Y|y|YES|Yes|yes|YEs|YE|ye|Ye)
+            y|Y|Yes|YES|yes|yES|yEs|YeS|yeS)
                 Temp_var=y
                 ;;
-            N|n|NO|No|no)
+            n|N|No|NO|no|nO)
                 Temp_var=n
                 ;;
             *)
@@ -204,8 +204,10 @@ function check_Required {
         then
             die "Your system is debian $oc_D_V. Only for Debian 7+"
         fi
+        oc_D_V="debian_wheezy"
     else
         print_info "only test ubuntu 14.04"
+        oc_D_V="$(cat /etc/debian_version)"
     fi
     print_info "Debian version ok"
 #check install 防止重复安装
@@ -218,6 +220,7 @@ function check_Required {
     print_info "Getting ip and base-tools from net......"
     apt-get update  -qq
     apt-get install -qq -y vim sudo gawk curl nano sed insserv dnsutils
+    [ $oc_D_V = "debian_wheezy" ] || sudo ln -s /usr/lib/insserv/insserv /sbin/insserv
     ocserv_hostname=$(wget -qO- ipv4.icanhazip.com)
     if [ $? -ne 0 -o -z $ocserv_hostname ]; then
         ocserv_hostname=`dig +short +tcp myip.opendns.com @resolver1.opendns.com`
@@ -303,20 +306,42 @@ function Dependencies_install_onebyone {
     for OC_DP in $oc_dependencies
     do
         print_info "Installing the $OC_DP "
-        apt-get install -y $TEST_S $OC_DP
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $TEST_S $OC_DP
         if [ $? -eq 0 ]; then
             print_info "[$OC_DP] ok!"
+            apt-get clean
         else
             print_warn "[$OC_DP] not be installed!"
         fi
     done
+}
+#lz4 from github
+function tar_lz4_install(){
+    print_info "Installing lz4 from github"
+    DEBIAN_FRONTEND=noninteractive apt-get -y -qq remove --purge liblz4-dev
+    mkdir lz4
+    LZ4_VERSION=`curl "https://github.com/Cyan4973/lz4/releases/latest" | sed -n 's/^.*tag\/\(.*\)".*/\1/p'` 
+    curl -SL "https://github.com/Cyan4973/lz4/archive/$LZ4_VERSION.tar.gz" -o lz4.tar.gz
+    tar -xf lz4.tar.gz -C lz4 --strip-components=1 
+    rm lz4.tar.gz 
+    cd lz4 
+    make -j"$(nproc)" 
+    make install
+    cd ..
+    rm -r lz4
+    if [ `getconf WORD_BIT` = '32' ] && [ `getconf LONG_BIT` = '64' ] ; then
+        ln -sf /usr/local/lib/liblz4.* /usr/lib/x86_64-linux-gnu/
+    else
+        ln -sf /usr/local/lib/liblz4.* /usr/lib/i386-linux-gnu/
+    fi
+    print_info "[lz4] ok"
 }
 #install dependencies 安装依赖文件
 function pre_install(){
 #keep kernel 防止某些情况下内核升级
     echo linux-image-`uname -r` hold | sudo dpkg --set-selections
     apt-get upgrade -y
-#no update from test sources 不升级不安装测试源其他包
+#no upgrade from test sources 不升级不安装测试源其他包
     if [ ! -d /etc/apt/preferences.d ];then
         mkdir /etc/apt/preferences.d
     fi
@@ -337,9 +362,12 @@ EOF
     cat > /etc/apt/apt.conf.d/77ocserv<<EOF
 APT::Install-Recommends "false";
 APT::Install-Suggests "false";
+APT::Get::Install-Recommends "false";
+APT::Get::Install-Suggests "false";
 EOF
 #sources check @ check Required 源检测在前面 for ubuntu+3
-    oc_dependencies="build-essential pkg-config make gcc m4 gnutls-bin libgmp3-dev libwrap0-dev libpam0g-dev libdbus-1-dev libnl-route-3-dev libopts25-dev libnl-nf-3-dev libreadline-dev libpcl1-dev autogen libtalloc-dev libgnutls28-dev libseccomp-dev liblz4-dev"
+    [ $oc_D_V = "jessie/sid" ] && oc_u_dependencies="libgnutls28-dev libseccomp-dev"
+    oc_dependencies="build-essential pkg-config make gcc m4 gnutls-bin libgmp3-dev libwrap0-dev libpam0g-dev libdbus-1-dev libnl-route-3-dev libopts25-dev libnl-nf-3-dev libreadline-dev libpcl1-dev autogen libtalloc-dev $oc_u_dependencies"
     TEST_S=""
     Dependencies_install_onebyone
 #add test source 
@@ -347,19 +375,18 @@ EOF
     echo "deb http://ftp.debian.org/debian jessie main contrib non-free" >> /etc/apt/sources.list
     apt-get update
 #install dependencies from wheezy-backports
-    oc_dependencies="libgnutls28-dev libseccomp-dev"
-    TEST_S="-t wheezy-backports"
-    Dependencies_install_onebyone
-#install dependencies lz4  增加压缩必须包
+    oc_dependencies="libgnutls28-dev libseccomp-dev" && TEST_S="-t wheezy-backports"
+    [ $oc_D_V = "jessie/sid" ] || Dependencies_install_onebyone
+#install dependencies lz4  增加lz4压缩必须包
+#   oc_dependencies="libprotobuf-c-dev libhttp-parser-dev liblz4-dev"
     oc_dependencies="liblz4-dev"
-#force-lz4
+#force-lz4 from debian jessie
     oc_force_lz4=${oc_force_lz4:-n}
     if [ $oc_force_lz4 = "y" ] ; then        
-        TEST_S="-t jessie --force-yes"
+        TEST_S="-t jessie -f --force-yes"
         Dependencies_install_onebyone
     else
-        TEST_S="-t wheezy-backports"
-        Dependencies_install_onebyone
+        tar_lz4_install
     fi
 #if sources del 如果本来没有测试源便删除
     if [ "$oc_wheezy_backports" = "n" ]; then
@@ -385,10 +412,9 @@ function tar_ocserv_install(){
     tar xvf ocserv-$oc_version.tar.xz
     rm -rf ocserv-$oc_version.tar.xz
     cd ocserv-$oc_version
-#have to use "" then $ work ,set router limit 0.10.0版本默认96条目
-    D_MAX_ROUTER=`cat src/vpn.h | grep MAX_CONFIG_ENTRIES`
-    sed -i "s/$D_MAX_ROUTER/#define MAX_CONFIG_ENTRIES $max_router/g" src/vpn.h
-    ./configure --prefix=/usr --sysconfdir=/etc 2>/root/ocerror.log
+#have to use "" then $ work ,set router limit 设定路由规则最大限制
+    sed -i "s|\(#define MAX_CONFIG_ENTRIES \).*|\1$max_router|" src/vpn.h
+    ./configure --prefix=/usr --sysconfdir=/etc --with-local-talloc 2>/root/ocerror.log
     make 2>>/root/ocerror.log
     make install
 #check install 检测编译安装是否成功
@@ -581,7 +607,7 @@ _EOF_
         die "server-cert.pem or server-key.pem NOT Found , make failure!"
     fi
     cp server-cert.pem /etc/ocserv && cp server-key.pem /etc/ocserv
-    cp ca-cert.pem /etc/ocserv && cp ca-cert.pem /root
+    cp ca-cert.pem /etc/ocserv
     print_info "Self-signed CA for ocserv ok , you could get the ca-cert.pem from /root"
 }
 
