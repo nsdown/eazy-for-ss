@@ -329,6 +329,11 @@ function tar_lz4_install(){
     make install
     cd ..
     rm -r lz4
+    if [ `getconf WORD_BIT` = '32' ] && [ `getconf LONG_BIT` = '64' ] ; then
+        ln -s /usr/local/lib/liblz4.* /usr/lib/x86_64-linux-gnu/
+    else
+        ln -s /usr/local/lib/liblz4.* /usr/lib/i386-linux-gnu/
+    fi
     print_info "[lz4] ok"
 }
 #install dependencies 安装依赖文件
@@ -381,9 +386,7 @@ EOF
         TEST_S="-t jessie -f --force-yes"
         Dependencies_install_onebyone
     else
-        TEST_S="-t wheezy-backports -f --force-yes" 
-        [ $oc_D_V = "jessie/sid" ] || Dependencies_install_onebyone
-        [ $oc_D_V = "jessie/sid" ] && tar_lz4_install
+        tar_lz4_install
     fi
 #if sources del 如果本来没有测试源便删除
     if [ "$oc_wheezy_backports" = "n" ]; then
