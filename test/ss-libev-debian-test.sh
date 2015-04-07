@@ -1,77 +1,67 @@
 #! /bin/bash
 
 #===============================================================================================
-#   System Required:  Debian (32bit/64bit)
-#   Description:  Install Shadowsocks(libev) for Debian 6 7
+#   System Required:  Debian/Ubuntu (32bit/64bit)
+#   Description:  Install Shadowsocks(libev) for Debian
 #   
 #===============================================================================================
 
 clear
 echo "#############################################################"
-echo "# Install Shadowsocks(libev) for Debian (32bit/64bit)"
+echo "# Install Shadowsocks(libev) for Debian/Ubuntu (32bit/64bit)"
 echo "#############################################################"
 echo ""
 
 # install Shadowsocks-libev
 function install_shadowsocks_libev(){
-    root
-    debian
-    get_config
-    pre_install
-    config_shadowsocks
-    shadowsocks_update
-    show_shadowsocks    
+check_ss
+get_config
+pre_install
+shadowsocks_update
+config_shadowsocks
+stop_start_shadowsocks
+show_shadowsocks    
 }
 
 #change config
 function changeconfig_shadowsocks_libev(){
-    get_config
-    config_shadowsocks
-    stop_shadowsocks
-    sudo /etc/init.d/shadowsocks-libev start
-    show_shadowsocks
+get_config
+config_shadowsocks
+stop_start_shadowsocks
+show_shadowsocks
 }
 
 #update shadowsocks-libev
 function update_shadowsocks_libev(){
-    stop_shadowsocks
-    shadowsocks_update
-	
+stop_shadowsocks
+shadowsocks_update	
 }
 
 #uninstall shadowsocks-libev
 function uninstall_shadowsocks_libev(){
-    printf "Are you sure uninstall Shadowsocks-libev? (y/n) "
-    printf "\n"
-    read -p "(Default: n):" answer
-    if [ -z $answer ]; then
-        answer="n"
-    fi
-    if [ "$answer" = "y" ]; then
-        #stop ss
-        stop_shadowsocks
-        #remove
-        rm -rf /etc/sysctl.d/local_ss.conf
-        apt-get remove -y --purge shadowsocks-libev
-        echo "Shadowsocks-libev uninstall success!"
-    else
-        echo "uninstall cancelled, Nothing to do"
-    fi
-}
-
-# Check if user is root
-function root(){
-if [ $(id -u) != "0" ]; then
-    echo "Error: You must be root to run this script!!"
-    exit 1
+printf "Are you sure uninstall Shadowsocks-libev? (y/n) \n"
+read -p "(Default: n):" answer
+if [ "$answer" = "y" ]; then
+#stop ss
+    stop_shadowsocks
+#remove
+    rm -f /etc/sysctl.d/local_ss.conf
+    DEBIAN_FRONTEND=noninteractive apt-get remove -y -q --purge shadowsocks-libev
+    echo "Shadowsocks-libev uninstall success!"
+else
+    echo "uninstall cancelled, Nothing to do"
 fi
 }
 
-# debian only
-function debian(){
-if [[ ! -e /etc/debian_version ]]; then
-	echo "Looks like you aren't running this installer on a Debian-based system"
-	exit 1
+# Check if user is root and debian only
+function check_ss(){
+if [ $(id -u) != "0" ]; then
+echo "You must be root to run this script."
+exit 1
+fi
+if [ ! -f /etc/debian_version ]; then
+echo "Looks like you aren't running this installer on a Debian-based system."
+exit 1
 fi
 }
 
@@ -80,7 +70,7 @@ function pre_install(){
 #base-tool
 apt-get update
 apt-get upgrade -y
-apt-get install -y sudo nano sed vim gawk curl
+apt-get install -y -qq sudo nano sed vim gawk curl dnsutils
 #tcp choice
 sysctl net.ipv4.tcp_available_congestion_control | grep 'hybla' > /dev/null 2>&1
 if [ $? -eq 0 ]; then 
@@ -88,7 +78,7 @@ tcp_congestion_ss="hybla"
 else
 tcp_congestion_ss="cubic"
 fi
-
+#sysctl file
 cat > /etc/sysctl.d/local_ss.conf<<EOF
 
 fs.file-max = 51200
@@ -114,10 +104,10 @@ net.ipv4.tcp_wmem = 4096 65536 67108864
 net.ipv4.tcp_mtu_probing = 1
 net.ipv4.tcp_congestion_control = $tcp_congestion_ss
 EOF
-
+#sysctl set
 sysctl -p /etc/sysctl.d/local_ss.conf
-#+sources   
-cat /etc/apt/sources.list | grep 'deb http://shadowsocks.org/debian' > /dev/null 2>&1
+#+source   
+cat /etc/apt/sources.list|grep -v '^#'|grep 'deb http://shadowsocks.org/debian' > /dev/null 2>&1
 if [ $? -ne 0 ]; then
     expr $(cat /etc/debian_version|cut -d. -f1|grep -v ^#) + 0 > /dev/null 2>&1
     if [ $? -eq 0 ]; then
@@ -130,40 +120,37 @@ if [ $? -ne 0 ]; then
     else
         echo "deb http://shadowsocks.org/debian wheezy main" >> /etc/apt/sources.list
     fi
-fi
-
 #add gpg
-wget -O- http://shadowsocks.org/debian/1D27208A.gpg | sudo apt-key add -	
-	   
+    wget -O- http://shadowsocks.org/debian/1D27208A.gpg | sudo apt-key add -
+fi
 clear
 }
 
 function get_config(){
-
 # Get shadowsocks-libev config password
-    echo "Please input password for shadowsocks-libev:"
-    read -p "(Default password: 123456):" shadowsockspwd
-    if [ "$shadowsockspwd" = "" ]; then
-        shadowsockspwd="123456"
-    fi
-    echo "password:$shadowsockspwd"
-    echo "####################################"
+echo "Please input password for shadowsocks-libev:"
+read -p "(Default password: 123456):" shadowsockspwd
+if [ "$shadowsockspwd" = "" ]; then
+     shadowsockspwd="123456"
+fi
+echo "password:$shadowsockspwd"
+echo "####################################"
 # Get shadowsocks-libev config servers port
-    echo "Please input server port for shadowsocks-libev:"
-    read -p "(Default port: 443):" shadowsockspt
-    if [ "$shadowsockspt" = "" ]; then
-        shadowsockspt="443"
-    fi
-    echo "port:$shadowsockspt"
-    echo "####################################"
+echo "Please input server port for shadowsocks-libev:"
+read -p "(Default port: 443):" shadowsockspt
+if [ "$shadowsockspt" = "" ]; then
+    shadowsockspt="443"
+fi
+echo "port:$shadowsockspt"
+echo "####################################"
 # Get shadowsocks-libev config Encryption Method
-    echo "Please input Encryption Method for shadowsocks-libev:"
-    read -p "(Default port: rc4-md5):" shadowsocksem
-    if [ "$shadowsocksem" = "" ]; then
-        shadowsocksem="rc4-md5"
-    fi
-    echo "encryption method:$shadowsocksem"
-    echo "####################################"
+echo "Please input Encryption Method for shadowsocks-libev:"
+read -p "(Default port: rc4-md5):" shadowsocksem
+if [ "$shadowsocksem" = "" ]; then
+    shadowsocksem="rc4-md5"
+fi
+echo "encryption method:$shadowsocksem"
+echo "####################################"
 #any key go on	
 get_char(){
     SAVEDSTTY=`stty -g`
@@ -174,36 +161,26 @@ get_char(){
     stty echo
     stty $SAVEDSTTY
 }
-    echo ""
-    echo "press any key to start...or Press Ctrl+C to cancel"
-    echo ""
-    ss_char=`get_char`
+echo ""
+echo "press any key to start...or Press Ctrl+C to cancel"
+echo ""
+ss_char=`get_char`
 }
 
-
 function shadowsocks_update(){
-
 echo linux-image-`uname -r` hold | sudo dpkg --set-selections
-
 sudo apt-get update
-
-(echo "n")|DEBIAN_FRONTEND=noninteractive apt-get install shadowsocks-libev -y
-
-
-N_MAXFD=`cat /etc/default/shadowsocks-libev | grep '^MAXFD' | sed 's/MAXFD=//g'`
-sed -i "s@MAXFD=$N_MAXFD@MAXFD=51200@" /etc/default/shadowsocks-libev
-
-sudo /etc/init.d/shadowsocks-libev restart
-
+DEBIAN_FRONTEND=noninteractive apt-get install shadowsocks-libev -y
+sed -i 's|\(MAXFD=\).*|\151200|' /etc/default/shadowsocks-libev
 }
 
 function config_shadowsocks(){
 # set config 
- if [ ! -d /etc/shadowsocks-libev ];then
+if [ ! -d /etc/shadowsocks-libev ];then
     mkdir /etc/shadowsocks-libev
- fi
-#:: not wort only 0.0.0.0
-        cat > /etc/shadowsocks-libev/config.json<<EOF
+fi
+#only 0.0.0.0
+cat > /etc/shadowsocks-libev/config.json<<EOF
 {
     "server":"0.0.0.0",
     "server_port":${shadowsockspt},
@@ -215,29 +192,33 @@ EOF
 }
 
 function stop_shadowsocks(){
+sudo /etc/init.d/shadowsocks-libev stop
 #stop all
 ss_pid=`pidof ss-server`
 if [ ! -z "$ss_pid" ]; then
-        for pid in $ss_pid
-        do
-            kill -9 $pid > /dev/null 2>&1
-            if [ $? -eq 0 ]; then
+    for pid in $ss_pid
+    do
+        kill -9 $pid > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
             echo "Shadowsocks-libev process[$pid] has been killed"
-            fi
-        done
+        fi
+    done
 fi
 }
 
-
+function stop_start_shadowsocks(){
+stop_shadowsocks
+sudo /etc/init.d/shadowsocks-libev start
+}
 
 function show_shadowsocks(){
 # Get IP
-    IP=$(wget -qO- ipv4.icanhazip.com)
-	if [ $? -ne 0 -o -z $IP ]; then
-        IP=`wget -qO- liyangyijie.sinaapp.com/ip/`
-        fi
+IP=$(wget -qO- ipv4.icanhazip.com)
+if [ $? -ne 0 -o -z $IP ]; then
+    IP=`dig +short +tcp myip.opendns.com @resolver1.opendns.com`
+fi
 # Run success or not
-ps -ef | grep -v grep | grep -v ps | grep -i 'ss-server' > /dev/null 2>&1
+ps -ef|grep -v grep|grep -v ps|grep -i 'ss-server' > /dev/null 2>&1
 if [ $? -eq 0 ]; then 
     clear
     echo ""
@@ -255,20 +236,21 @@ else
 	exit
 fi
 }
+
 # Initialization step
 action=$1
-[  -z $1 ] && action=install
+[ -z $1 ] && action=install
 case "$action" in
 install)
     install_shadowsocks_libev
     ;;
-changeconfig)
+changeconfig|ch)
     changeconfig_shadowsocks_libev
     ;;
-update)
+update|up)
     update_shadowsocks_libev
     ;;
-uninstall)
+uninstall|un)
     uninstall_shadowsocks_libev
     ;;
 *)
