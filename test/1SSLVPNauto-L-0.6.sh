@@ -277,7 +277,7 @@ function get_Custom_configuration(){
 #whether to use the certificate login 是否证书登录或者用户名密码登录
     fast_Default_Ask "Whether to choose the certificate login?(y/n)" "n" "ca_login"
 #Which ocserv version to install 安装哪个版本的ocserv
-    fast_Default_Ask "$OC_version_latest is the latest ocserv version,but default version is recommended.Which to choose?" "0.10.1" "oc_version"
+    fast_Default_Ask "$OC_version_latest is the latest ocserv version,but default version is recommended.Which to choose?" "0.10.2" "oc_version"
 #Force lz4 or not
     fast_Default_Ask "Install liblz4-dev from jessie ,maybe it can destroy your system." "n" "oc_force_lz4"
 #Save user vars or not 是否保存脚本参数 以便于下次快速配置
@@ -406,8 +406,8 @@ function tar_ocserv_install(){
     cd /root
 #default max route rulers
     max_router=${max_router:-200}
-#default version is 0.10.1 默认版本是为0.10.1
-    oc_version=${oc_version:-0.10.1}
+#default version  默认版本
+    oc_version=${oc_version:-0.10.2}
     wget ftp://ftp.infradead.org/pub/ocserv/ocserv-$oc_version.tar.xz
     tar xvf ocserv-$oc_version.tar.xz
     rm -rf ocserv-$oc_version.tar.xz
