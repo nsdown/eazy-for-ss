@@ -318,6 +318,7 @@ function Dependencies_install_onebyone {
 #lz4 from github
 function tar_lz4_install(){
     print_info "Installing lz4 from github"
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq remove --purge liblz4-dev
     mkdir lz4
     LZ4_VERSION=`curl "https://github.com/Cyan4973/lz4/releases/latest" | sed -n 's/^.*tag\/\(.*\)".*/\1/p'` 
     curl -SL "https://github.com/Cyan4973/lz4/archive/$LZ4_VERSION.tar.gz" -o lz4.tar.gz
@@ -380,8 +381,9 @@ EOF
         TEST_S="-t jessie -f --force-yes"
         Dependencies_install_onebyone
     else
-        TEST_S="-t wheezy-backports -f --force-yes"
-        Dependencies_install_onebyone
+        TEST_S="-t wheezy-backports -f --force-yes" 
+        [ $oc_D_V = "jessie/sid" ] || Dependencies_install_onebyone
+        [ $oc_D_V = "jessie/sid" ] && tar_lz4_install
     fi
 #if sources del 如果本来没有测试源便删除
     if [ "$oc_wheezy_backports" = "n" ]; then
