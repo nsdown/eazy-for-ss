@@ -607,7 +607,7 @@ _EOF_
         die "server-cert.pem or server-key.pem NOT Found , make failure!"
     fi
     cp server-cert.pem /etc/ocserv && cp server-key.pem /etc/ocserv
-    cp ca-cert.pem /etc/ocserv && cp ca-cert.pem /root
+    cp ca-cert.pem /etc/ocserv
     print_info "Self-signed CA for ocserv ok , you could get the ca-cert.pem from /root"
 }
 
