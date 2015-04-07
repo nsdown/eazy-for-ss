@@ -204,8 +204,10 @@ function check_Required {
         then
             die "Your system is debian $oc_D_V. Only for Debian 7+"
         fi
+        oc_D_V="debian_wheezy"
     else
         print_info "only test ubuntu 14.04"
+        oc_D_V="$(cat /etc/debian_version)"
     fi
     print_info "Debian version ok"
 #check install 防止重复安装
@@ -218,6 +220,7 @@ function check_Required {
     print_info "Getting ip and base-tools from net......"
     apt-get update  -qq
     apt-get install -qq -y vim sudo gawk curl nano sed insserv dnsutils
+    [ $oc_D_V = "debian_wheezy" ] || sudo ln -s /usr/lib/insserv/insserv /sbin/insserv
     ocserv_hostname=$(wget -qO- ipv4.icanhazip.com)
     if [ $? -ne 0 -o -z $ocserv_hostname ]; then
         ocserv_hostname=`dig +short +tcp myip.opendns.com @resolver1.opendns.com`
@@ -312,6 +315,21 @@ function Dependencies_install_onebyone {
         fi
     done
 }
+#lz4 from github
+function tar_lz4_install(){
+    print_info "Installing lz4 from github"
+    mkdir lz4
+    LZ4_VERSION=`curl "https://github.com/Cyan4973/lz4/releases/latest" | sed -n 's/^.*tag\/\(.*\)".*/\1/p'` 
+    curl -SL "https://github.com/Cyan4973/lz4/archive/$LZ4_VERSION.tar.gz" -o lz4.tar.gz
+    tar -xf lz4.tar.gz -C lz4 --strip-components=1 
+    rm lz4.tar.gz 
+    cd lz4 
+    make -j"$(nproc)" 
+    make install
+    cd ..
+    rm -r lz4
+    print_info "[lz4] ok"
+}
 #install dependencies 安装依赖文件
 function pre_install(){
 #keep kernel 防止某些情况下内核升级
@@ -342,7 +360,8 @@ APT::Get::Install-Recommends "false";
 APT::Get::Install-Suggests "false";
 EOF
 #sources check @ check Required 源检测在前面 for ubuntu+3
-    oc_dependencies="build-essential pkg-config make gcc m4 gnutls-bin libgmp3-dev libwrap0-dev libpam0g-dev libdbus-1-dev libnl-route-3-dev libopts25-dev libnl-nf-3-dev libreadline-dev libpcl1-dev autogen libtalloc-dev libgnutls28-dev libseccomp-dev liblz4-dev"
+    [ $oc_D_V = "jessie/sid" ] && oc_u_dependencies="libgnutls28-dev libseccomp-dev"
+    oc_dependencies="build-essential pkg-config make gcc m4 gnutls-bin libgmp3-dev libwrap0-dev libpam0g-dev libdbus-1-dev libnl-route-3-dev libopts25-dev libnl-nf-3-dev libreadline-dev libpcl1-dev autogen libtalloc-dev $oc_u_dependencies"
     TEST_S=""
     Dependencies_install_onebyone
 #add test source 
@@ -350,19 +369,18 @@ EOF
     echo "deb http://ftp.debian.org/debian jessie main contrib non-free" >> /etc/apt/sources.list
     apt-get update
 #install dependencies from wheezy-backports
-    oc_dependencies="libgnutls28-dev libseccomp-dev"
-    TEST_S="-t wheezy-backports"
-    Dependencies_install_onebyone
+    oc_dependencies="libgnutls28-dev libseccomp-dev" && TEST_S="-t wheezy-backports"
+    [ $oc_D_V = "jessie/sid" ] || Dependencies_install_onebyone
 #install dependencies lz4  增加lz4压缩必须包
 #   oc_dependencies="libprotobuf-c-dev libhttp-parser-dev liblz4-dev"
     oc_dependencies="liblz4-dev"
-#force-lz4 from jessie
+#force-lz4 from debian jessie
     oc_force_lz4=${oc_force_lz4:-n}
     if [ $oc_force_lz4 = "y" ] ; then        
         TEST_S="-t jessie -f --force-yes"
         Dependencies_install_onebyone
     else
-        TEST_S="-t wheezy-backports"
+        TEST_S="-t wheezy-backports -f --force-yes"
         Dependencies_install_onebyone
     fi
 #if sources del 如果本来没有测试源便删除
