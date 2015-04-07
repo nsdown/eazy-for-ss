@@ -71,10 +71,10 @@ function Default_Ask(){
     read Temp_var
     if [ "$Temp_default_var" = "y" ] || [ "$Temp_default_var" = "n" ] ; then
         case $Temp_var in
-            Y|y|YES|Yes|yes|YEs|YE|ye|Ye)
+            y|Y|Yes|YES|yes|yES|yEs|YeS|yeS)
                 Temp_var=y
                 ;;
-            N|n|NO|No|no)
+            n|N|No|NO|no|nO)
                 Temp_var=n
                 ;;
             *)
