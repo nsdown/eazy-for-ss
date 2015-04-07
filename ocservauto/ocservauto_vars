@@ -17,6 +17,8 @@ ocserv_boot_start='y'
 #是否证书登录
 ca_login='y'
 #安装版本
-oc_version='0.10.1'
+oc_version='0.10.2'
+#是否强制从debian_jessie安装lz4,默认编译安装lz4
+oc_force_lz4='n'
 #是否保存本配置文件
 save_user_vars='y'
