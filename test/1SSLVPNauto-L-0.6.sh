@@ -518,9 +518,9 @@ sysctl -w net.ipv4.ip_forward=1 > /dev/null 2>&1
 
 #get gateway and profiles
 gw_intf_oc=`ip route show | grep '^default' | sed -e 's/.* dev \([^ ]*\).*/\1/'`
-ocserv_tcpport=`cat $OCSERV_CONFIG | grep '^tcp-' |  cut -d ' ' -f 3`
-ocserv_udpport=`cat $OCSERV_CONFIG | grep '^udp-' |  cut -d ' ' -f 3`
-ocserv_ip4_work_mask=`cat $OCSERV_CONFIG | grep '^ipv4-' | cut -d ' ' -f 3 | sed 'N;s|\n|/|g'`
+ocserv_tcpport=`sed -n 's/^tcp-.*=.* //p' $OCSERV_CONFIG`
+ocserv_udpport=`sed -n 's/^udp-.*=.* //p' $OCSERV_CONFIG`
+ocserv_ip4_work_mask=`sed -n 's/^ipv4-.*=.* //p' $OCSERV_CONFIG|sed 'N;s|\n|/|g'`
 
 # turn on NAT over default gateway and VPN
 if !(iptables-save -t nat | grep -q "$gw_intf_oc (ocserv)"); then
