@@ -72,6 +72,8 @@ apt-get update
 apt-get upgrade -y
 apt-get install -y -qq sudo nano sed vim gawk curl dnsutils
 #tcp choice
+#load hybla
+/sbin/modprobe tcp_hybla > /dev/null 2>&1
 sysctl net.ipv4.tcp_available_congestion_control | grep 'hybla' > /dev/null 2>&1
 if [ $? -eq 0 ]; then 
 tcp_congestion_ss="hybla"
