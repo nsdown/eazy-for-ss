@@ -11,3 +11,6 @@ And command
 wget -qO- http://git.io/jkgU --no-check-certificate|grep -v ^#|cut -d/ -f2|sed s/^/./ > chinadomains
 ```
 At last, add it to pdnsd.conf.
+```shell
+sed -i '/include=/ r chinadomains' pdnsd.conf
+```
