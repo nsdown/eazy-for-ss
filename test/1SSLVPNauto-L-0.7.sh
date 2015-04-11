@@ -220,7 +220,7 @@ function check_Required {
     print_info "Getting ip and base-tools from net......"
     apt-get update  -qq
     apt-get install -qq -y vim sudo gawk curl nano sed insserv dnsutils
-    [ $oc_D_V = "debian_wheezy" ] || sudo ln -s /usr/lib/insserv/insserv /sbin/insserv
+    [ "$oc_D_V" = "debian_wheezy" ] || sudo ln -s /usr/lib/insserv/insserv /sbin/insserv
     ocserv_hostname=$(wget -qO- ipv4.icanhazip.com)
     if [ $? -ne 0 -o -z $ocserv_hostname ]; then
         ocserv_hostname=`dig +short +tcp myip.opendns.com @resolver1.opendns.com`
@@ -366,7 +366,7 @@ APT::Get::Install-Recommends "false";
 APT::Get::Install-Suggests "false";
 EOF
 #sources check @ check Required 源检测在前面 for ubuntu+3
-    [ $oc_D_V = "jessie/sid" ] && oc_u_dependencies="libgnutls28-dev libseccomp-dev"
+    [ "$oc_D_V" = "jessie/sid" ] && oc_u_dependencies="libgnutls28-dev libseccomp-dev"
     oc_dependencies="build-essential pkg-config make gcc m4 gnutls-bin libgmp3-dev libwrap0-dev libpam0g-dev libdbus-1-dev libnl-route-3-dev libopts25-dev libnl-nf-3-dev libreadline-dev libpcl1-dev autogen libtalloc-dev $oc_u_dependencies"
     TEST_S=""
     Dependencies_install_onebyone
@@ -376,13 +376,13 @@ EOF
     apt-get update
 #install dependencies from wheezy-backports
     oc_dependencies="libgnutls28-dev libseccomp-dev" && TEST_S="-t wheezy-backports"
-    [ $oc_D_V = "jessie/sid" ] || Dependencies_install_onebyone
+    [ "$oc_D_V" = "jessie/sid" ] || Dependencies_install_onebyone
 #install dependencies lz4  增加lz4压缩必须包
 #   oc_dependencies="libprotobuf-c-dev libhttp-parser-dev liblz4-dev"
     oc_dependencies="liblz4-dev"
 #force-lz4 from debian jessie
     oc_force_lz4=${oc_force_lz4:-n}
-    if [ $oc_force_lz4 = "y" ] ; then        
+    if [ "$oc_force_lz4" = "y" ] ; then        
         TEST_S="-t jessie -f --force-yes"
         Dependencies_install_onebyone
     else
@@ -685,7 +685,7 @@ function set_ocserv_conf(){
     fi
 #save custom-configuration files or not ,del fqdnname
     sed -i '/fqdnname=/d' $CONFIG_PATH_VARS
-    if [ $save_user_vars = "n" ] ; then
+    if [ "$save_user_vars" = "n" ] ; then
         rm -rf $CONFIG_PATH_VARS
     fi
     print_info "Set ocserv ok"
@@ -782,7 +782,20 @@ function get_new_userca {
     print_warn " You should import the certificate to your device at first."
 }
 
-function revoke_userca {
+function Outdate_Autoclean(){
+    My_All_Ca=`ls -F|sed -n 's/\(user-.*\)\//\1/p'|sed ':a;N;s/\n/ /;ba;'`
+    for My_One_Ca in $My_All_Ca
+    do
+        Client_EX_Days=`sed -n 's/.*days = //p' $My_One_Ca/user.tmpl`
+        Client_Ifsign_Date=`expr $(date +%Y%m%d -d "-$Client_EX_Days day")`
+        Client_Truesign_Date=`expr $(date -r $My_One_Ca/user.tmpl +%Y%m%d)`
+        if [ $Client_Truesign_Date -lt $Client_Ifsign_Date ]; then
+            mv $My_One_Ca -t revoke/
+        fi
+    done
+}
+
+function revoke_userca(){
     if [ ! -f /usr/sbin/ocserv ]
     then
         die "Ocserv NOT Found !!!"
@@ -792,6 +805,7 @@ function revoke_userca {
     fi
 #get info
     cd /etc/ocserv/CAforOC
+    Outdate_Autoclean
     clear
     print_xxxx
     print_info "The following is the user list..."
