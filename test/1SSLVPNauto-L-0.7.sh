@@ -375,7 +375,7 @@ EOF
     echo "deb http://ftp.debian.org/debian jessie main contrib non-free" >> /etc/apt/sources.list
     apt-get update
 #install dependencies from wheezy-backports
-    oc_dependencies="libgnutls28-dev libseccomp-dev" && TEST_S="-t wheezy-backports"
+    oc_dependencies="libgnutls28-dev libseccomp-dev" && TEST_S="-t wheezy-backports -f --force-yes"
     [ "$oc_D_V" = "jessie/sid" ] || Dependencies_install_onebyone
 #install dependencies lz4  增加lz4压缩必须包
 #   oc_dependencies="libprotobuf-c-dev libhttp-parser-dev liblz4-dev"
