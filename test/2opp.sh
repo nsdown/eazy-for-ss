@@ -165,7 +165,7 @@ function Get_config_ONLYC {
 }
 function Install_lnmp {
     invoke-rc.d sendmail stop > /dev/null 2>1&
-    apt-get -q -y remove --purge sendmail* apache2* portmap samba* nscd
+    apt-get -q -y remove --purge sendmail* apache2* portmap samba* nscd bind9*
     apt-get -q -y autoremove
     apt-get -q -y autoclean
     apt-get -q -y clean
