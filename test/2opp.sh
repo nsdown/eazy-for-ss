@@ -146,8 +146,6 @@ function Get_config_SC {
     Default_Ask "Your username?" "$username" "username"
     Default_Ask "Your password?" "$password" "password"
     Default_Ask "Start_Traffic?" "$Start_Traffic" "Start_Traffic"
-    Default_Ask "" "" ""
-    Default_Ask "" "" ""
 }
 function Get_config_ONLYS {
     Default_Ask "" "" ""
@@ -251,9 +249,9 @@ END
     done
     Panel_Admin_Passwd=`echo -n "$password"|md5sum|cut -d ' ' -f1`
     sed -i "s/25d55ad283aa400af464c76d713c07ad/$Panel_Admin_Passwd/" shadowsocks.sql
+    sed -i "s/Our_Private_Panel_Domain/$My_Domain/" shadowsocks.sql
     sed -i "s/Our_Private_Panel/$username/" shadowsocks.sql
     sed -i "s/My_Passwd/$(get_random_word 8)/" shadowsocks.sql
-    sed -i "s/Our_Private_Panel_Domain/$My_Domain/" shadowsocks.sql
     mysqladmin create "shadowsocks"
     echo "GRANT ALL PRIVILEGES ON \`shadowsocks\`.* TO \`shadowsocks\`@localhost IDENTIFIED BY '$DB_SS_PW';" | mysql
     mysql shadowsocks < ./shadowsocks.sql
@@ -323,7 +321,7 @@ EOF
     cd /root
     rm -rf shadowsocks
     cat > /etc/supervisor/conf.d/shadowsocks-manyuser.conf<<'EOF'
-program:shadowsocks-manyuser]
+[program:shadowsocks-manyuser]
 command=python /etc/shadowsocks-manyuser/server.py -c /etc/shadowsocks-manyuser/config.json
 autostart=true
 autorestart=true
@@ -357,7 +355,7 @@ function Start_all {
     supervisorctl reload
 }
 function Show_result {
-
+    print_info "ok"
 }
 function Install_Our_Private_Panel_SC {
     Check_Required
