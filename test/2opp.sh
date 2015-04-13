@@ -242,7 +242,7 @@ password = $DB_ROOT_PW
 END
 	fi
     chmod 600 ~/.my.cnf    
-    echo "$DB_ROOT_PW" >> /root/OPP.conf
+    echo "mysql_ROOT_PW=$DB_ROOT_PW" >> /root/OPP.conf
     cd /root
     while [ ! -f shadowsocks.sql ]; do
         wget https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/Our-Private-Panel/shadowsocks.sql --no-check-certificate
