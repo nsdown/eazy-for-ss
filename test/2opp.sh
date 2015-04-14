@@ -142,26 +142,22 @@ function Add_dotdeb {
     fi
 }
 function Get_config_SC {
-    Default_Ask "Your domain?" "$IP" "My_Domain"
+    Default_Ask "Your domain for the web panel?" "$IP" "My_Domain"
     Default_Ask "Your username?" "$username" "username"
     Default_Ask "Your password?" "$password" "password"
     Default_Ask "Start_Traffic?" "$Start_Traffic" "Start_Traffic"
 }
 function Get_config_ONLYS {
-    Default_Ask "" "" ""
-    Default_Ask "" "" ""
-    Default_Ask "" "" ""
-    Default_Ask "" "" ""
-    Default_Ask "" "" ""
-    Default_Ask "" "" ""
+    Default_Ask "Your domain for the web panel?" "$IP" "My_Domain"
+    Default_Ask "Your username?" "$username" "username"
+    Default_Ask "Your password?" "$password" "password"
+    Default_Ask "Everyone's Start Traffic(G)?" "$Start_Traffic" "Start_Traffic"
 }
 function Get_config_ONLYC {
-    Default_Ask "" "" ""
-    Default_Ask "" "" ""
-    Default_Ask "" "" ""
-    Default_Ask "" "" ""
-    Default_Ask "" "" ""
-    Default_Ask "" "" ""
+    Default_Ask "The manage server's global ip?" "127.0.0.1" "DB_BIND_IP"
+#    Default_Ask "The manage server's ss-manage-port?" "23333" "DB_PORT"
+#    Default_Ask "The manage server's ss-manage-pass?" "12345678" "DB_PASS"
+    Default_Ask "The manage server's shadowsocks database password?" "12345678" "DB_SS_PW"
 }
 function Install_lnmp {
     invoke-rc.d sendmail stop > /dev/null 2>1&
@@ -170,7 +166,7 @@ function Install_lnmp {
     apt-get -q -y autoclean
     apt-get -q -y clean
     apt-get upgrade -y
-    DEBIAN_FRONTEND=noninteractive apt-get install -y -q nginx-full php5-fpm php5-gd php5-mysql php5-curl mysql-server mysql-client
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -q nginx-full php5-cli php5-fpm php5-gd php5-mysql php5-curl mysql-server mysql-client
 #Nginx
     cat > /etc/nginx/conf.d/nginx_Our_Private_Panel.conf <<'EOF'
 server {
@@ -180,7 +176,7 @@ server {
     index index.html index.htm index.php;
     client_max_body_size 32m;
     access_log  off;
-    error_log  /var/www/error.log;
+    error_log  off;
     location ~* \.(js|css|png|jpg|jpeg|gif|ico)$ {
         expires max;
         log_not_found off;
@@ -220,6 +216,7 @@ server {
 }
 EOF
     sed -i "s/Our_Private_Panel_Domain/$My_Domain/" /etc/nginx/conf.d/nginx_Our_Private_Panel.conf
+    sed -i "s/listen 88/listen $Web_Listen_Port/" /etc/nginx/conf.d/nginx_Our_Private_Panel.conf
 #Mysql
     /etc/init.d/mysql stop
     cat > /etc/mysql/conf.d/OurPrivatePanel.cnf <<'EOF'
@@ -336,26 +333,51 @@ function Install_ss_panel {
     mv config-simple.php config.php
     sed -i "s/password/$DB_SS_PW/" config.php
     sed -i "s/togb\*30/togb\*$Start_Traffic/" config.php
-    sed -i "s/panel\.com/$My_Domain/" config.php
+    sed -i "s/panel\.com/${My_Domain}:${Web_Listen_Port}/" config.php
     cd ..
     rm -rf sql && rm -rf .git*
     mkdir -p /var/www/$My_Domain
     mv * /var/www/$My_Domain
-    chown -R www-data.www-data /var/www/$My_Domain
     cd ..
-    rm -rf ss-panel  
+    rm -rf ss-panel
+    cd /var/www/$My_Domain
+    Safe_code=$(get_random_word 12)
+    mkdir tools${Safe_code}
+    cd tools
+    sed -i "s|= '1'|= '${Traffic_Zero_Day}'|" reset_transfer.php
+    mv * ../tools${Safe_code}
+    cd ..
+    rm -r tools
+    echo "1-2 1 1-31 * * root cd /var/www/$My_domain/tools${Safe_code} && /usr/bin/php -f cron.php" >> /etc/crontab
+    chown -R www-data.www-data /var/www/$My_Domain
+    cd /root
 }
 function Start_all {
-    /etc/init.d/nginx stop
-    /etc/init.d/nginx start
-    /etc/init.d/mysql stop
-    /etc/init.d/mysql start
-    /etc/init.d/supervisor stop
-    /etc/init.d/supervisor start
-    supervisorctl reload
+    if [ "$Install_status" = "sc" -o "$Install_status" = "s" ]; then
+        /etc/init.d/nginx stop
+        /etc/init.d/nginx start
+        /etc/init.d/mysql stop
+        /etc/init.d/mysql start
+    fi
+    if [ "$Install_status" = "sc" -o "$Install_status" = "c" ]; then
+        /etc/init.d/supervisor stop
+        /etc/init.d/supervisor start
+        supervisorctl reload
+    fi
 }
 function Show_result {
-    print_info "ok"
+    if [ "$Install_status" = "sc" -o "$Install_status" = "s" ]; then
+        print_info "The admin and the first user's username is $username"
+        print_info "The admin and the first user's password is $password"
+        print_info "You cloud find your configuration file at /root/OPP.conf"
+        print_info "Visit 'http://${My_Domain}:${Web_Listen_Port}/admin/' to manage Your Panel"
+    else 
+        print_info "The manage server's global ip is $DB_BIND_IP"
+#        print_info "The manage server's ss-manage-port is $DB_PORT"
+#        print_info "The manage server's ss-manage-pass is $DB_PASS"
+        print_info "The manage server's shadowsocks database password is $DB_SS_PW"
+    fi
+    
 }
 function Install_Our_Private_Panel_SC {
     Check_Required
@@ -411,10 +433,13 @@ function Default_Vars {
     DB_SS_PW="$(get_random_word 12)"
 #数据库root用户密码
     DB_ROOT_PW="$(get_random_word 12)"
-#每位成员的初始可用流量，单位G。这里并不是月流量，是可获得总流量。
-    Start_Traffic="100"
+#每位成员的初始可用流量，单位G；以及流量清零日1-31
+    Traffic_Zero_Day="1"
+    Start_Traffic="30"
 #自己站点的域名或者IP
     My_Domain="$IP"
+#网页监听端口
+    Web_Listen_Port="88"
 #管理员和第一位用户的用户名以及密码 ss的密码和端口请在面板中寻找
     username="$(get_random_word 8)"
     password="$(get_random_word 8)"
@@ -427,12 +452,15 @@ action=$1
 [  -z $1 ] && action=sc
 case "$action" in
 sc)
+    Install_status="sc"
     Install_Our_Private_Panel_SC
     ;;
 s)
+    Install_status="s"
     Install_Our_Private_Panel_ONLYS
     ;;
 c)
+    Install_status="c"
     Install_Our_Private_Panel_ONLYC
     ;;
 help | h)
