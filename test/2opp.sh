@@ -348,7 +348,7 @@ function Install_ss_panel {
     mv * ../tools${Safe_code}
     cd ..
     rm -r tools
-    echo "1-2 1 1-31 * * root cd /var/www/$My_domain/tools${Safe_code} && /usr/bin/php -f cron.php" >> /etc/crontab
+    echo "1-2 1 1-31 * * root cd /var/www/$My_Domain/tools${Safe_code} && /usr/bin/php -f cron.php" >> /etc/crontab
     chown -R www-data.www-data /var/www/$My_Domain
     cd /root
 }
