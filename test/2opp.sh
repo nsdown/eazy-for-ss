@@ -314,7 +314,7 @@ MYSQL_DB = 'shadowsocks'
 
 MANAGE_PASS = '$DB_PASS'
 #if you want manage in other server you should set this value to global ip
-MANAGE_BIND_IP = '$DB_BIND_IP'
+MANAGE_BIND_IP = '127.0.0.1'
 #make sure this port is idle
 MANAGE_PORT = $DB_PORT
 EOF
