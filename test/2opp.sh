@@ -405,6 +405,7 @@ function Install_Our_Private_Panel_ONLYS {
 #    Add_dotdeb
     Install_lnmp
     Install_ss_panel
+    Start_all
     Show_result
 }
 function Install_Our_Private_Panel_ONLYC {
@@ -413,6 +414,7 @@ function Install_Our_Private_Panel_ONLYC {
     Get_config_ONLYC
     Set_sysctl_for_ss
     Install_shadowsocks_manyuser
+    Start_all
     Show_result
 }
 function help_Our_Private_Panel {
