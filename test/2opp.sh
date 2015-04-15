@@ -1,4 +1,8 @@
 #!/bin/bash
+#######################################################
+#debian 7                                             #
+#RAM>=128M                                            #
+#                                                     #
 ###################################################################################################################
 #base-function                                                                                                    #
 ###################################################################################################################
@@ -229,6 +233,8 @@ performance_schema_max_table_instances = 16
 table_definition_cache = 8
 table_open_cache = 8
 EOF
+#监听外网地址
+#   sed -i 's/127.0.0.1/0.0.0.0/' /etc/mysql/my.cnf
     /etc/init.d/mysql start
     if [ ! -e ~/.my.cnf ]; then
     mysqladmin -u root password "$DB_ROOT_PW"
@@ -250,7 +256,8 @@ END
     sed -i "s/Our_Private_Panel/$username/" shadowsocks.sql
     sed -i "s/My_Passwd/$(get_random_word 8)/" shadowsocks.sql
     mysqladmin create "shadowsocks"
-    echo "GRANT ALL PRIVILEGES ON \`shadowsocks\`.* TO \`shadowsocks\`@localhost IDENTIFIED BY '$DB_SS_PW';" | mysql
+    echo "GRANT ALL PRIVILEGES ON \`shadowsocks\`.* TO \`shadowsocks\`@\`%\` IDENTIFIED BY '$DB_SS_PW';" | mysql
+    #@localhost 修改为@%
     mysql shadowsocks < ./shadowsocks.sql
     rm shadowsocks.sql
     echo "shadowsocks_DB_PW=$DB_SS_PW" >> /root/OPP.conf
@@ -348,7 +355,7 @@ function Install_ss_panel {
     mv * ../tools${Safe_code}
     cd ..
     rm -r tools
-    echo "1-2 1 1-31 * * root cd /var/www/$My_Domain/tools${Safe_code} && /usr/bin/php -f cron.php" >> /etc/crontab
+    echo "1-2 1 1-31 * * root cd /var/www/$My_domain/tools${Safe_code} && /usr/bin/php -f cron.php" >> /etc/crontab
     chown -R www-data.www-data /var/www/$My_Domain
     cd /root
 }
