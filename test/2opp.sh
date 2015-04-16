@@ -348,6 +348,7 @@ function Install_ss_panel {
     cd ..
     rm -rf ss-panel
     cd /var/www/$My_Domain
+    chown -R www-data.www-data /var/www/$My_Domain
     Safe_code=$(get_random_word 12)
     mkdir tools${Safe_code}
     cd tools
@@ -355,8 +356,9 @@ function Install_ss_panel {
     mv * ../tools${Safe_code}
     cd ..
     rm -r tools
+    chown -R root.root tools${Safe_code}
+    chmod -R 700 tools${Safe_code}
     echo "1-2 1 1-31 * * root cd /var/www/$My_domain/tools${Safe_code} && /usr/bin/php -f cron.php" >> /etc/crontab
-    chown -R www-data.www-data /var/www/$My_Domain
     cd /root
 }
 function Start_all {
