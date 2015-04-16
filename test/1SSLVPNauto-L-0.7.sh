@@ -319,6 +319,7 @@ function Dependencies_install_onebyone {
 function tar_lz4_install(){
     print_info "Installing lz4 from github"
     DEBIAN_FRONTEND=noninteractive apt-get -y -qq remove --purge liblz4-dev
+    apt-get autoremove -qq -y && apt-get clean
     mkdir lz4
     LZ4_VERSION=`curl "https://github.com/Cyan4973/lz4/releases/latest" | sed -n 's/^.*tag\/\(.*\)".*/\1/p'` 
     curl -SL "https://github.com/Cyan4973/lz4/archive/$LZ4_VERSION.tar.gz" -o lz4.tar.gz
@@ -335,6 +336,17 @@ function tar_lz4_install(){
         ln -sf /usr/local/lib/liblz4.* /usr/lib/i386-linux-gnu/
     fi
     print_info "[lz4] ok"
+}
+function tar_freeradius_client_install(){
+    print_info "Installing freeradius-client"
+    wget -c ftp://ftp.freeradius.org/pub/freeradius/freeradius-client-1.1.7.tar.gz
+    tar -zxf freeradius-client-1.1.7.tar.gz
+    cd freeradius-client-1.1.7
+    ./configure --prefix=/usr --sysconfdir=/etc
+    make -j"$(nproc)" && make install
+    cd ..
+    rm -rf freeradius-client*
+    print_info "[freeradius-client] ok"
 }
 #install dependencies 安装依赖文件
 function pre_install(){
@@ -377,6 +389,8 @@ EOF
 #install dependencies from wheezy-backports
     oc_dependencies="libgnutls28-dev libseccomp-dev" && TEST_S="-t wheezy-backports -f --force-yes"
     [ "$oc_D_V" = "jessie/sid" ] || Dependencies_install_onebyone
+#install freeradius-client-1.1.7
+    tar_freeradius_client_install
 #install dependencies lz4  增加lz4压缩必须包
 #   oc_dependencies="libprotobuf-c-dev libhttp-parser-dev liblz4-dev"
     oc_dependencies="liblz4-dev"
@@ -408,14 +422,14 @@ function tar_ocserv_install(){
     max_router=${max_router:-200}
 #default version  默认版本
     oc_version=${oc_version:-0.10.2}
-    wget ftp://ftp.infradead.org/pub/ocserv/ocserv-$oc_version.tar.xz
+    wget -c ftp://ftp.infradead.org/pub/ocserv/ocserv-$oc_version.tar.xz
     tar xvf ocserv-$oc_version.tar.xz
     rm -rf ocserv-$oc_version.tar.xz
     cd ocserv-$oc_version
 #have to use "" then $ work ,set router limit 设定路由规则最大限制
     sed -i "s|\(#define MAX_CONFIG_ENTRIES \).*|\1$max_router|" src/vpn.h
     ./configure --prefix=/usr --sysconfdir=/etc --with-local-talloc 2>/root/ocerror.log
-    make 2>>/root/ocerror.log
+    make -j"$(nproc)" 2>>/root/ocerror.log
     make install
 #check install 检测编译安装是否成功
     if [ ! -f /usr/sbin/ocserv ]
