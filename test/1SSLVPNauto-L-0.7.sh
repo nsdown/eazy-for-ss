@@ -860,7 +860,13 @@ function upgrade_ocserv {
     press_any_key
     tar_ocserv_install    
     start_ocserv
+    ps -ef | grep -v grep | grep -v ps | grep -i '/usr/sbin/ocserv' > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
     print_info "Your ocserv upgrade was successful!"
+    else
+    print_warn "Ocserv start failure,ocserv is offline!"
+    print_info "You could use ' bash `basename $0` ri' to forcibly upgrade your ocserv"
+    fi
 }
 
 function help_ocservauto {
@@ -877,7 +883,7 @@ function help_ocservauto {
     echo
     print_info " upgrade or ug ------------------- Smooth upgrade your ocserv"
     echo
-    print_info " reinstall or ri ----------------- Anyway forced to reinstall your ocserv"
+    print_info " reinstall or ri ----------------- Force to reinstall your ocserv"
     echo
     print_info " help or h ----------------------- Show this description"
     print_xxxx
