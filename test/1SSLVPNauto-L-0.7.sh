@@ -581,6 +581,7 @@ EOF
         wget -c $OC_CONF_NET_DOC/ocserv.conf --no-check-certificate
     done
     if [ ! -f dh.pem ]; then
+        print_info "Perhaps generate DH parameters will take some time , please wait..."
         certtool --generate-dh-params --sec-param high --outfile dh.pem
     fi
     echo ""
