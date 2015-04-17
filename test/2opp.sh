@@ -257,7 +257,6 @@ END
     sed -i "s/My_Passwd/$(get_random_word 8)/" shadowsocks.sql
     mysqladmin create "shadowsocks"
     echo "GRANT ALL PRIVILEGES ON \`shadowsocks\`.* TO \`shadowsocks\`@\`%\` IDENTIFIED BY '$DB_SS_PW';" | mysql
-    #@localhost 修改为@%
     mysql shadowsocks < ./shadowsocks.sql
     rm shadowsocks.sql
     echo "shadowsocks_DB_PW=$DB_SS_PW" >> /root/OPP.conf
@@ -320,15 +319,20 @@ MANAGE_PORT = $DB_PORT
 EOF
 #修改默认加密为128 修改加密方式必须从json中修改
     sed -i 's/\(.*meth.*:\).*/\1"aes-128-cfb"/' config.json
+    sed -i 's/\(.*timeout.*:\).*/\160,/' config.json
     mkdir -p /etc/shadowsocks-manyuser
     mv * /etc/shadowsocks-manyuser
     cd /root
     rm -rf shadowsocks
+#增加web-ss用户并且禁止登录
+    useradd web-ss
+    /bin/false web-ss
     cat > /etc/supervisor/conf.d/shadowsocks-manyuser.conf<<'EOF'
 [program:shadowsocks-manyuser]
 command=python /etc/shadowsocks-manyuser/server.py -c /etc/shadowsocks-manyuser/config.json
 autostart=true
 autorestart=true
+user=web-ss
 EOF
     echo 'ulimit -n 51200' >>  /etc/default/supervisor
 }
