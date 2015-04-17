@@ -149,18 +149,18 @@ function Get_config_SC {
     Default_Ask "Your domain for the web panel?" "$IP" "My_Domain"
     Default_Ask "Your username?" "$username" "username"
     Default_Ask "Your password?" "$password" "password"
-    Default_Ask "Start_Traffic?" "$Start_Traffic" "Start_Traffic"
+    Default_Ask "Everyone's Start_Traffic?" "$Start_Traffic" "Start_Traffic"
+    Default_Ask "Are there any other ss-manyuser servers?" "n" "Other_SS"
 }
 function Get_config_ONLYS {
     Default_Ask "Your domain for the web panel?" "$IP" "My_Domain"
     Default_Ask "Your username?" "$username" "username"
     Default_Ask "Your password?" "$password" "password"
     Default_Ask "Everyone's Start Traffic(G)?" "$Start_Traffic" "Start_Traffic"
+    Other_SS="y"
 }
 function Get_config_ONLYC {
     Default_Ask "The manage server's global ip?" "127.0.0.1" "DB_BIND_IP"
-#    Default_Ask "The manage server's ss-manage-port?" "23333" "DB_PORT"
-#    Default_Ask "The manage server's ss-manage-pass?" "12345678" "DB_PASS"
     Default_Ask "The manage server's shadowsocks database password?" "12345678" "DB_SS_PW"
 }
 function Install_lnmp {
@@ -234,7 +234,7 @@ table_definition_cache = 8
 table_open_cache = 8
 EOF
 #监听外网地址
-#   sed -i 's/127.0.0.1/0.0.0.0/' /etc/mysql/my.cnf
+    [ "$Other_SS" = "y" ] && sed -i 's/127.0.0.1/0.0.0.0/' /etc/mysql/my.cnf
     /etc/init.d/mysql start
     if [ ! -e ~/.my.cnf ]; then
     mysqladmin -u root password "$DB_ROOT_PW"
