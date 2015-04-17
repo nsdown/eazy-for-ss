@@ -583,6 +583,7 @@ EOF
     if [ ! -f dh.pem ]; then
         certtool --generate-dh-params --sec-param high --outfile dh.pem
     fi
+    echo ""
     print_info "Ocserv install ok"
 }
 
@@ -608,7 +609,7 @@ cert_signing_key
 crl_signing_key
 _EOF_
     certtool --generate-self-signed --load-privkey ca-key.pem --template ca.tmpl --outfile ca-cert.pem
-#generating a local server key-certificate pair 通过自签证书授权中心制作服务器的证书与私钥
+#generating a local server key-certificate pair 通过自签证书授权中心制作服务器的私钥与证书
     certtool --generate-privkey --outfile server-key.pem
     cat << _EOF_ > server.tmpl
 cn = "$fqdnname"
@@ -742,7 +743,7 @@ function show_ocserv(){
             print_warn "You could stop ocserv by ' /etc/init.d/ocserv stop '!"
             print_warn "Boot from the start or not, use ' sudo insserv ocserv ' or ' sudo insserv -r ocserv '."
             echo ""    
-            print_info " Enjoy it!"
+            print_info "Enjoy it!"
             echo ""
         else
             echo ""
@@ -865,7 +866,7 @@ function upgrade_ocserv {
     print_info "Your ocserv upgrade was successful!"
     else
     print_warn "Ocserv start failure,ocserv is offline!"
-    print_info "You could use ' bash `basename $0` ri' to forcibly upgrade your ocserv"
+    print_info "You could use ' bash `basename $0` ri' to forcibly upgrade your ocserv."
     fi
 }
 
@@ -905,9 +906,11 @@ echo
 echo "==============================================================================================="
 
 #vars 
-#fastmode vars 脚本参数 可以保存配置下次快速部署
+#fastmode vars 存放配置参数文件的绝对路径，快速安装模式可用
 CONFIG_PATH_VARS="/root/ocservauto_vars"
+#ocserv配置文件所在的网络文件夹位置
 OC_CONF_NET_DOC="https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto"
+#推荐的默认版本
 Default_oc_version="0.10.2"
 
 #Initialization step
@@ -941,7 +944,7 @@ help | h)
 *)
     clear
     print_warn "Arguments error! [ ${action} ]"
-    print_warn "Usage:  bash `basename $0` {install|fm|gc|rc|ug|ri|h}"
+    print_warn "Usage:  bash `basename $0` {install|fm|gc|rc|ug|ri|help}"
     help_ocservauto
     ;;
 esac
