@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 
 #===============================================================================================
 #   System Required:  Debian 7+
@@ -14,20 +14,20 @@
 ###################################################################################################################
 
 #error and force-exit
-function die {
+function die(){
     echo -e "\033[33mERROR: $1 \033[0m" > /dev/null 1>&2
     exit 1
 }
 
 #info echo
-function print_info {
+function print_info(){
     echo -n -e '\e[1;36m'
     echo -n $1
     echo -e '\e[0m'
 }
 
 ##### echo
-function print_xxxx {
+function print_xxxx(){
     xXxX="#############################"
     echo
     echo "$xXxX$xXxX$xXxX$xXxX"
@@ -35,7 +35,7 @@ function print_xxxx {
 }
 
 #warn echo
-function print_warn {
+function print_warn(){
     echo -n -e '\033[41;37m'
     echo -n $1
     echo -e '\033[0m'
@@ -94,7 +94,7 @@ function Default_Ask(){
 }
 
 #Press any key to start 任意键开始
-function press_any_key {
+function press_any_key(){
     echo
     print_info "Press any key to start...or Press Ctrl+C to cancel"
     get_char_ffff(){
@@ -134,13 +134,12 @@ function install_OpenConnect_VPN_server(){
         clear
         print_xxxx
         print_info "Install ocserv with custom configuration."
-        echo
-        print_info "You should know what you are modifying , it is recommended that you use the default settings."
         print_xxxx
         get_Custom_configuration
     else
+        clear
         print_xxxx
-        print_info "Automatic installation."
+        print_info "Automatic installation,choose the plain login."
         print_xxxx
         self_signed_ca="y"
         ca_login="n"    
@@ -183,7 +182,7 @@ function install_OpenConnect_VPN_server(){
     show_ocserv    
 }
 
-function check_Required {
+function check_Required(){
 #check root
     if [ $(/usr/bin/id -u) != "0" ]
     then
@@ -220,7 +219,8 @@ function check_Required {
     print_info "Getting ip and base-tools from net......"
     apt-get update  -qq
     apt-get install -qq -y vim sudo gawk curl nano sed insserv dnsutils
-    [ "$oc_D_V" = "debian_wheezy" ] || sudo ln -s /usr/lib/insserv/insserv /sbin/insserv
+    insserv -s  > /dev/null 2>&1
+    [ $? -eq 0 ] || sudo ln -s /usr/lib/insserv/insserv /sbin/insserv
     ocserv_hostname=$(wget -qO- ipv4.icanhazip.com)
     if [ $? -ne 0 -o -z $ocserv_hostname ]; then
         ocserv_hostname=`dig +short +tcp myip.opendns.com @resolver1.opendns.com`
@@ -301,8 +301,9 @@ function add_a_user(){
         Default_Ask "Input the number of expiration days for your p12-cert file:" "7777" "oc_ex_days"
     fi
 }
+
 #dependencies onebyone
-function Dependencies_install_onebyone {
+function Dependencies_install_onebyone(){
     for OC_DP in $oc_dependencies
     do
         print_info "Installing the $OC_DP "
@@ -315,6 +316,7 @@ function Dependencies_install_onebyone {
         fi
     done
 }
+
 #lz4 from github
 function tar_lz4_install(){
     print_info "Installing lz4 from github"
@@ -337,6 +339,8 @@ function tar_lz4_install(){
     fi
     print_info "[lz4] ok"
 }
+
+#install freeradius-client 1.1.7
 function tar_freeradius_client_install(){
     print_info "Installing freeradius-client"
     wget -c ftp://ftp.freeradius.org/pub/freeradius/freeradius-client-1.1.7.tar.gz
@@ -348,10 +352,11 @@ function tar_freeradius_client_install(){
     rm -rf freeradius-client*
     print_info "[freeradius-client] ok"
 }
+
 #install dependencies 安装依赖文件
 function pre_install(){
 #keep kernel 防止某些情况下内核升级
-    echo linux-image-`uname -r` hold | sudo dpkg --set-selections
+    echo linux-image-`uname -r` hold | sudo dpkg --set-selections > /dev/null 2>&1
     apt-get upgrade -y
 #no upgrade from test sources 不升级不安装测试源其他包
     if [ ! -d /etc/apt/preferences.d ];then
@@ -415,6 +420,7 @@ EOF
     apt-get update
     print_info "Dependencies  ok"
 }
+
 #install 编译安装
 function tar_ocserv_install(){
     cd /root
@@ -588,7 +594,8 @@ EOF
     print_info "Ocserv install ok"
 }
 
-function make_ocserv_ca {
+function make_ocserv_ca(){
+    print_info "Generating Self-signed CA..."
 #all in one doc
     cd /etc/ocserv/CAforOC
 #Self-signed CA set
@@ -627,12 +634,12 @@ _EOF_
     fi
     cp server-cert.pem /etc/ocserv && cp server-key.pem /etc/ocserv
     cp ca-cert.pem /etc/ocserv
-    print_info "Self-signed CA for ocserv ok , you could get the ca-cert.pem from /root"
+    print_info "Self-signed CA for ocserv ok"
 }
 
-function ca_login_ocserv {
+function ca_login_ocserv(){
 #make a client cert
-    print_info "Making a client cert..."
+    print_info "Generating a client cert..."
     cd /etc/ocserv/CAforOC
     caname=`cat ca.tmpl | grep cn | cut -d '"' -f 2`
     if [ "X${caname}" = "X" ]; then
@@ -667,7 +674,7 @@ crl_number = 1
 EOF
     certtool --generate-crl --load-ca-privkey ca-key.pem --load-ca-certificate ca-cert.pem --template crl.tmpl --outfile ../crl.pem
     fi
-    print_info "Set client cert ok"
+    print_info "Generate client cert ok"
 }
 
 #set 设定相关参数
@@ -779,7 +786,7 @@ function show_ocserv(){
     fi
 }
 
-function get_new_userca {
+function get_new_userca(){
     [ ! -f /usr/sbin/ocserv ] && die "Ocserv NOT Found !!!"
     if [ ! -f /etc/ocserv/CAforOC/ca-cert.pem ] || [ ! -f /etc/ocserv/CAforOC/ca-key.pem ]; then
         die "ca-cert.pem or ca-key.pem NOT Found !!!"
@@ -788,7 +795,10 @@ function get_new_userca {
     self_signed_ca="y"
     add_a_user
     press_any_key
-    ca_login_ocserv
+    ca_login_ocserv    
+}
+
+function get_new_userca_show(){
     clear
     echo -e "\033[41;37m Your p12-cert's password is \033[0m" "$password"
     echo -e "\033[41;37m Your p12-cert's number of expiration days is \033[0m" "$oc_ex_days"
@@ -843,7 +853,7 @@ function revoke_userca(){
     echo    
 }
 
-function reinstall_ocserv {
+function reinstall_ocserv(){
     stop_ocserv
     rm -rf /etc/ocserv
     rm -rf /etc/dbus-1/system.d/org.infradead.ocserv.conf
@@ -852,15 +862,18 @@ function reinstall_ocserv {
     install_OpenConnect_VPN_server
 }
 
-function upgrade_ocserv {
-    stop_ocserv
-    rm -f /etc/dbus-1/system.d/org.infradead.ocserv.conf
-    rm -f /etc/ocserv/profile.xml
+function upgrade_ocserv(){    
+    [ ! -f $CONFIG_PATH_VARS ] && save_user_vars="n"
     OC_version_latest=$(curl -s "http://www.infradead.org/ocserv/download.html" | sed -n 's/^.*version is <b>\(.*$\)/\1/p')
     Default_Ask "The latest is ${OC_version_latest}.Input the version you want to upgrade?" "$OC_version_latest" "oc_version"
     Default_Ask "The maximum number of routing table rules?" "200" "max_router"
+    [ "$save_user_vars" = "n" ] && rm -f $CONFIG_PATH_VARS
     press_any_key
-    tar_ocserv_install    
+    stop_ocserv
+    rm -f /etc/dbus-1/system.d/org.infradead.ocserv.conf
+    rm -f /etc/ocserv/profile.xml
+    rm -rf /usr/sbin/ocserv
+    tar_ocserv_install
     start_ocserv
     ps -ef | grep -v grep | grep -v ps | grep -i '/usr/sbin/ocserv' > /dev/null 2>&1
     if [ $? -eq 0 ]; then
@@ -871,23 +884,53 @@ function upgrade_ocserv {
     fi
 }
 
-function help_ocservauto {
+function enable_both_login_open_ca(){
+    get_new_userca
+    sed -i 's|^[# /t]*\(enable-auth = certificate\)|\1|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# /t]*\(ca-cert = \).*|\1/etc/ocserv/ca-cert.pem|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# /t]*\(crl = \).*|\1/etc/ocserv/crl.pem|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# /t]*\(cert-user-oid = \).*|\12.5.4.3|' /etc/ocserv/ocserv.conf
+    stop_ocserv
+    start_ocserv
+    get_new_userca_show
+}
+
+function enable_both_login_open_plain(){
+    ca_login="n"
+    add_a_user
+    press_any_key
+    (echo "$password"; sleep 1; echo "$password") | ocpasswd -c "/etc/ocserv/ocpasswd" $username
+    sed -i 's|^[ /t]*\(auth = "certificate"\)|#\1|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# /t]*\(auth = "plain\)|\1|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# /t]*\(enable-auth = certificate\)|\1|' /etc/ocserv/ocserv.conf
+    stop_ocserv
+    start_ocserv
+    clear
+    echo -e "\033[41;37m Your username is \033[0m" "$username"
+    echo -e "\033[41;37m Your password is \033[0m" "$password"
+    echo
+    print_info "Enjoy it"
+}
+
+function help_ocservauto(){
     print_xxxx
     print_info "######################## Parameter Description ####################################"
     echo
-    print_info " install ------------------------- Install ocserv for Debian 7+"
+    print_info " install ----------------------- Install ocserv for Debian 7+"
     echo
-    print_info " fastmode or fm ------------------ Rapid installation for ocserv through $CONFIG_PATH_VARS"
+    print_info " fastmode or fm ---------------- Rapid installation for ocserv through $CONFIG_PATH_VARS"
     echo
-    print_info " getuserca or gc ----------------- Get a new client certificate"
+    print_info " getuserca or gc --------------- Get a new client certificate"
     echo
-    print_info " revokeuserca or rc -------------- Revoke a client certificate"
+    print_info " revokeuserca or rc ------------ Revoke a client certificate"
     echo
-    print_info " upgrade or ug ------------------- Smooth upgrade your ocserv"
+    print_info " upgrade or ug ----------------- Smooth upgrade your ocserv"
     echo
-    print_info " reinstall or ri ----------------- Force to reinstall your ocserv"
+    print_info " reinstall or ri --------------- Force to reinstall your ocserv"
     echo
-    print_info " help or h ----------------------- Show this description"
+    print_info " pc ---------------------------- At the same time,enable the plain login and the certificate login"
+    echo
+    print_info " help or h --------------------- Show this description"
     print_xxxx
 }
 ###################################################################################################################
@@ -906,7 +949,6 @@ print_info " Help Info:  bash `basename $0` help"
 echo
 echo "==============================================================================================="
 
-#vars 
 #fastmode vars 存放配置参数文件的绝对路径，快速安装模式可用
 CONFIG_PATH_VARS="/root/ocservauto_vars"
 #ocserv配置文件所在的网络文件夹位置
@@ -928,7 +970,10 @@ fastmode | fm)
     install_OpenConnect_VPN_server
     ;;
 getuserca | gc)
+    [ ! -f $CONFIG_PATH_VARS ] && save_user_vars="n"
     get_new_userca
+    get_new_userca_show
+    [ "$save_user_vars" = "n" ] && rm -f $CONFIG_PATH_VARS
     ;;
 revokeuserca | rc)
     revoke_userca
@@ -939,13 +984,19 @@ upgrade | ug)
 reinstall | ri)
     reinstall_ocserv
     ;;
+pc)
+    [ ! -f $CONFIG_PATH_VARS ] && save_user_vars="n"
+    [  -f /etc/ocserv/crl.pem ] && enable_both_login_open_plain
+    [ ! -f /etc/ocserv/crl.pem ] && enable_both_login_open_ca
+    [ "$save_user_vars" = "n" ] && rm -f $CONFIG_PATH_VARS
+    ;;
 help | h)
     help_ocservauto
     ;;
 *)
     clear
     print_warn "Arguments error! [ ${action} ]"
-    print_warn "Usage:  bash `basename $0` {install|fm|gc|rc|ug|ri|help}"
+    print_warn "Usage:  bash `basename $0` {install|fm|gc|rc|ug|ri|pc|help}"
     help_ocservauto
     ;;
 esac
