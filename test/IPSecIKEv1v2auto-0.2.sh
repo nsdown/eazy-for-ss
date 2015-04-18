@@ -169,12 +169,12 @@ function tar_install(){
     DEBIAN_FRONTEND=noninteractive apt-get install -y libpam0g-dev libssl-dev make gcc build-essential pkg-config m4 libcurl4-openssl-dev libtspi-dev    
 #获取最新版本
     cd /root
-    wget http://download.strongswan.org/strongswan.tar.gz
+    wget -c http://download.strongswan.org/strongswan.tar.gz
     tar xzf strongswan.tar.gz
     rm strongswan.tar.gz
     cd strongswan-*
     [ "$openvz" = "y" ] && Add_Parameter="--enable-kernel-libipsec"
-    ./configure -prefix=/usr -sysconfdir=/etc -libexecdir=/usr/lib --enable-eap-identity --enable-eap-md5 --enable-eap-mschapv2 --enable-eap-tls --enable-eap-ttls --enable-eap-peap  --enable-eap-tnc --enable-eap-dynamic --enable-eap-radius --enable-xauth-eap  --enable-xauth-pam  --enable-dhcp  --enable-openssl  --enable-addrblock --enable-unity  --enable-certexpire --enable-radattr --enable-tools  --disable-gmp $Add_Parameter
+    ./configure -prefix=/usr -sysconfdir=/etc -libexecdir=/usr/lib --enable-eap-identity --enable-eap-md5 --enable-eap-mschapv2 --enable-eap-tls --enable-eap-ttls --enable-eap-peap  --enable-eap-tnc --enable-eap-dynamic --enable-eap-radius --enable-xauth-eap  --enable-xauth-pam  --enable-dhcp  --enable-openssl  --enable-addrblock --enable-unity  --enable-certexpire --enable-radattr --disable-gmp $Add_Parameter
     make -j"$(nproc)" && make install
     [ ! -f /usr/sbin/ipsec ] && die "Install failure,check dependencies!"
     cd ..
@@ -296,7 +296,6 @@ conn iOS_cert
 
 # for psk mode 
 conn ios_android_xauth_psk
-    fragmentation=yes
     keyexchange=ikev1
     leftauth=psk
     rightauth=psk
@@ -326,7 +325,7 @@ charon {
     filelog {
         /var/log/strongswan.charon.log {
             time_format = %b %e %T
-            default = 2
+            default = 1
             append = no
             flush_line = yes
         }
