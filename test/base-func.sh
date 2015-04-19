@@ -33,24 +33,23 @@ function Default_Ask(){
     Temp_question=$1
     Temp_default_var=$2
     Temp_var_name=$3
-#default path 如果为空 则定为/temp_vars
+#default path 如果为空 则定为脚本所在文件夹
     CONFIG_PATH_VARS=${CONFIG_PATH_VARS:-$(Get_shell_path)/temp_vars}
 #rewrite $ok
-    if [  -f ${CONFIG_PATH_VARS} ] ; then
+    if [ -f ${CONFIG_PATH_VARS} ] ; then
         New_temp_default_var=`cat $CONFIG_PATH_VARS | grep "^$Temp_var_name=" | cut -d "'" -f 2`
         Temp_default_var=${New_temp_default_var:-$Temp_default_var}
-#"变量替换有效 '变量不替换
-        sed -i "/^${Temp_var_name}=/d" $CONFIG_PATH_VARS
     fi
 #if yes or no 
     echo -e -n "\e[1;36m$Temp_question\e[0m""\033[31m(Default:$Temp_default_var): \033[0m"
     read Temp_var
     if [ "$Temp_default_var" = "y" ] || [ "$Temp_default_var" = "n" ] ; then
+        Temp_var=$(echo $Temp_var | sed 'y/YESNO0/yesnoo/')
         case $Temp_var in
-            y|Y|Yes|YES|yes|yES|yEs|YeS|yeS)
+            y|ye|yes)
                 Temp_var=y
                 ;;
-            n|N|No|NO|no|nO)
+            n|no)
                 Temp_var=n
                 ;;
             *)
@@ -62,8 +61,6 @@ function Default_Ask(){
     fi
     Temp_cmd="$Temp_var_name='$Temp_var'"
     eval $Temp_cmd
-    echo $Temp_cmd >> $CONFIG_PATH_VARS
-#    . $CONFIG_PATH_VARS
     echo
     print_info "Your answer is : ${Temp_var}"
     echo
@@ -103,12 +100,16 @@ function fast_Default_Ask(){
         print_info "In the fast mode, $3 will be loaded from $CONFIG_PATH_VARS"
     else
         Default_Ask "$1" "$2" "$3"
+        [ -f ${CONFIG_PATH_VARS} ] && sed -i "/^${Temp_var_name}=/d" $CONFIG_PATH_VARS
+        echo $Temp_cmd >> $CONFIG_PATH_VARS
     fi
 }
 #$1位随机文本 去除容易认混单字
 function get_random_word_no_mistake(){
-    str_no_mistake=`cat /dev/urandom | tr -cd abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789 | head -c $1`
-    echo $str_no_mistake
+    D_Num_Random="8"
+    Num_Random=${1:-$D_Num_Random}
+    str=`cat /dev/urandom | tr -cd abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789 | head -c $Num_Random`
+    echo $str
 }
 #shell path 获取当前脚本路径
 function Get_shell_path {
