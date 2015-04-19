@@ -63,6 +63,7 @@ function Default_Ask(){
     fi
 #if yes or no 
     echo -e -n "\e[1;36m$Temp_question\e[0m""\033[31m(Default:$Temp_default_var): \033[0m"
+    echo
     read Temp_var
     if [ "$Temp_default_var" = "y" ] || [ "$Temp_default_var" = "n" ]; then
         Temp_var=$(echo $Temp_var | sed 'y/YESNO0/yesnoo/')
@@ -82,7 +83,6 @@ function Default_Ask(){
     fi
     Temp_cmd="$Temp_var_name='$Temp_var'"
     eval $Temp_cmd
-    echo
     print_info "Your answer is : ${Temp_var}"
     echo
     print_xxxx
@@ -781,15 +781,18 @@ function get_new_userca(){
     self_signed_ca="y"
     add_a_user
     press_any_key
-    ca_login_ocserv    
+    ca_login_ocserv
+    clear
 }
 
 function get_new_userca_show(){
-    clear
+    echo
     echo -e "\033[41;37m Your p12-cert's password is \033[0m" "$password"
     echo -e "\033[41;37m Your p12-cert's number of expiration days is \033[0m" "$oc_ex_days"
     print_warn " You could get user-${name_user_ca}.p12 from /root."
     print_warn " You should import the certificate to your device at first."
+    echo
+    print_info "Enjoy it"
 }
 
 function Outdate_Autoclean(){
@@ -876,6 +879,10 @@ function enable_both_login_open_ca(){
     sed -i 's|^[# /t]*\(cert-user-oid = \).*|\12.5.4.3|' /etc/ocserv/ocserv.conf
     stop_ocserv
     start_ocserv
+    clear
+    echo
+    print_info "The plain login and the certificate login are Okay~"
+    print_info "The following is your certificate login info~"
     get_new_userca_show
 }
 
@@ -890,6 +897,10 @@ function enable_both_login_open_plain(){
     stop_ocserv
     start_ocserv
     clear
+    echo
+    print_info "The plain login and the certificate login are Okay~"
+    print_info "The following is your plain login info~"
+    echo
     echo -e "\033[41;37m Your username is \033[0m" "$username"
     echo -e "\033[41;37m Your password is \033[0m" "$password"
     echo
