@@ -950,7 +950,7 @@ CONFIG_PATH_VARS="/root/ocservauto_vars"
 #ocserv配置文件所在的网络文件夹位置
 OC_CONF_NET_DOC="https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto"
 #推荐的默认版本
-Default_oc_version="0.10.2"
+Default_oc_version="0.10.1"
 
 #Initialization step
 action=$1
