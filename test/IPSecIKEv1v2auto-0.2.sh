@@ -245,7 +245,7 @@ function set_IPSecIKEv1v2_conf(){
 config setup
     uniqueids=never
     strictcrlpolicy=no
-    charondebug="cfg 2, dmn 2, ike 2, net 2"
+#    charondebug="cfg 2, dmn 2, ike 2, net 2"
 
 #default for all 
 conn %default
@@ -324,10 +324,10 @@ charon {
     
     filelog {
         /var/log/strongswan.charon.log {
-            time_format = %b %e %T
-            default = 1
-            append = no
-            flush_line = yes
+#            time_format = %b %e %T
+#            default = 1
+#            append = no
+#            flush_line = yes
         }
     }
 }
