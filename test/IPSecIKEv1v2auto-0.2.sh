@@ -213,7 +213,7 @@ function make_IPSecIKEv1v2_ca(){
     openssl pkcs12 -export -inkey /etc/ipsec.d/private/ClientKey.pem -in /etc/ipsec.d/certs/ClientCert.pem -name "Client's VPN Certificate" -certfile /etc/ipsec.d/cacerts/strongswanCert.pem -caname "strongSwan Root CA" -out Client.p12 -passout pass:$password
 #MV strongswanKey,PKCS#12 TO ROOT
     mv Client.p12 /root
-    cp cacerts/strongswanCert.pem /root
+    cp cacerts/strongswanCert.pem /root/RootCA.crt
     print_info "CA OK"
 }
 
@@ -247,7 +247,7 @@ config setup
     strictcrlpolicy=no
 #    charondebug="cfg 2, dmn 2, ike 2, net 2"
 
-#default for all 
+#default for all testok
 conn %default
     ikelifetime=24h
     keylife=24h
@@ -261,15 +261,15 @@ conn %default
     right=%any
     rightsourceip=10.89.32.0/24
 
-# compatible with "strongSwan VPN Client" for Android 4.0+
-# and Windows 7 cert mode. 
+# compatible with "strongSwan VPN Client" for Android 4.0+.testok.
+# and Windows 7+ cert mode.testok. 
 conn networkmanager-strongswan
     keyexchange=ikev2
     leftauth=pubkey
     rightauth=pubkey
     auto=add
 
-# for win esp mode 
+# for win esp mode. testok.blackberry.
 conn windows_eap
     keyexchange=ikev2
     ike=aes256-sha1-modp1024!
@@ -282,7 +282,7 @@ conn windows_eap
     eap_identity=%any
     auto=add
 
-# for ios cert mode. 
+# for ios cert mode.testok.
 conn iOS_cert
     keyexchange=ikev1
     # strongswan version >= 5.0.2, compatible with iOS 6.0,6.0.1
@@ -293,7 +293,7 @@ conn iOS_cert
     rightauth2=xauth
     auto=add
 
-# for psk mode 
+# for psk mode.testok.
 conn ios_android_xauth_psk
     fragmentation=yes
     keyexchange=ikev1
@@ -581,7 +581,7 @@ function show_IPSecIKEv1v2(){
         print_info " Enjoy it!"
         echo ""
     else
-        print_warn "IPSecIKEv1v2 start failure,IPSecIKEv1v2 is offline!"	
+        print_warn "IPSecIKEv1v2 start failure,IPSecIKEv1v2 is offline!"
     fi
 }
 
