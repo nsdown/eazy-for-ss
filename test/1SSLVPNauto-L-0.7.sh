@@ -41,15 +41,11 @@ function print_warn(){
     echo -e '\033[0m'
 }
 
-#get random word 获取$1位随机文本
+#get random word 获取$1位随机文本，剔除容易识别错误的字符例如0和O等等
 function get_random_word(){
-    index=0
-    str=""
-    for i in {a..z}; do arr[index]=$i; index=$(expr ${index} + 1); done
-    for i in {A..Z}; do arr[index]=$i; index=$(expr ${index} + 1); done
-    for i in {0..9}; do arr[index]=$i; index=$(expr ${index} + 1); done
-#$1 figures
-    for i in `seq 1 $1`; do str="$str${arr[$RANDOM%$index]}"; done
+    D_Num_Random="8"
+    Num_Random=${1:-$D_Num_Random}
+    str=`cat /dev/urandom | tr -cd abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789 | head -c $Num_Random`
     echo $str
 }
 
@@ -61,20 +57,20 @@ function Default_Ask(){
     Temp_default_var=$2
     Temp_var_name=$3
 #rewrite $ok
-    if [  -f ${CONFIG_PATH_VARS} ] ; then
+    if [  -f ${CONFIG_PATH_VARS} ]; then
         New_temp_default_var=`cat $CONFIG_PATH_VARS | grep "^$Temp_var_name=" | cut -d "'" -f 2`
         Temp_default_var=${New_temp_default_var:-$Temp_default_var}
-        sed -i "/^${Temp_var_name}=/d" $CONFIG_PATH_VARS
     fi
 #if yes or no 
     echo -e -n "\e[1;36m$Temp_question\e[0m""\033[31m(Default:$Temp_default_var): \033[0m"
     read Temp_var
-    if [ "$Temp_default_var" = "y" ] || [ "$Temp_default_var" = "n" ] ; then
+    if [ "$Temp_default_var" = "y" ] || [ "$Temp_default_var" = "n" ]; then
+        Temp_var=$(echo $Temp_var | sed 'y/YESNO0/yesnoo/')
         case $Temp_var in
-            y|Y|Yes|YES|yes|yES|yEs|YeS|yeS)
+            y|ye|yes)
                 Temp_var=y
                 ;;
-            n|N|No|NO|no|nO)
+            n|no)
                 Temp_var=n
                 ;;
             *)
@@ -86,7 +82,6 @@ function Default_Ask(){
     fi
     Temp_cmd="$Temp_var_name='$Temp_var'"
     eval $Temp_cmd
-    echo $Temp_cmd >> $CONFIG_PATH_VARS
     echo
     print_info "Your answer is : ${Temp_var}"
     echo
@@ -112,10 +107,12 @@ function press_any_key(){
 
 #fast mode
 function fast_Default_Ask(){
-    if [ "$fast_install" = "y" ] ; then
+    if [ "$fast_install" = "y" ]; then
         print_info "In the fast mode, $3 will be loaded from $CONFIG_PATH_VARS"
     else
         Default_Ask "$1" "$2" "$3"
+        [ -f ${CONFIG_PATH_VARS} ] && sed -i "/^${Temp_var_name}=/d" $CONFIG_PATH_VARS
+        echo $Temp_cmd >> $CONFIG_PATH_VARS
     fi
 }
 
@@ -127,7 +124,7 @@ function fast_Default_Ask(){
 function install_OpenConnect_VPN_server(){
 #check system , get IP and ocversion ,del test sources 检测系统 获取本机公网ip 最新版本 去除测试源
     check_Required
-	
+
 #custom-configuration or not 自定义安装与否
     fast_Default_Ask "Install ocserv with Custom Configuration?(y/n)" "n" "Custom_config_ocserv"
     if [ "$Custom_config_ocserv" = "y" ]; then
@@ -153,32 +150,32 @@ function install_OpenConnect_VPN_server(){
 
 #install dependencies 安装依赖文件
     pre_install
-	
-#install ocserv 编译安装软件	
+
+#install ocserv 编译安装软件
     tar_ocserv_install
 
-#make self-signd server-ca 制作服务器自签名证书	
+#make self-signd server-ca 制作服务器自签名证书
     if [ "$self_signed_ca" = "y" ]; then
     make_ocserv_ca
     fi
 
-#make a client cert 若证书登录则制作客户端证书	
+#make a client cert 若证书登录则制作客户端证书
     if [ "$ca_login" = "y" ] && [ "$self_signed_ca" = "y" ]; then
-    ca_login_ocserv	
+    ca_login_ocserv
     fi
 
-#configuration 设定软件相关选项	
+#configuration 设定软件相关选项
     set_ocserv_conf
 
 #stop all 关闭所有正在运行的ocserv软件
     stop_ocserv
 
-#no certificate,no start 没有服务器证书则不启动	
-    if [ "$self_signed_ca" = "y" ]; then	
+#no certificate,no start 没有服务器证书则不启动
+    if [ "$self_signed_ca" = "y" ]; then
     start_ocserv
     fi
 
-#show result 显示结果	
+#show result 显示结果
     show_ocserv    
 }
 
@@ -205,7 +202,7 @@ function check_Required(){
         fi
         oc_D_V="debian_wheezy"
     else
-        print_info "only test ubuntu 14.04"
+        print_info "Only test ubuntu 14.04"
         oc_D_V="$(cat /etc/debian_version)"
     fi
     print_info "Debian version ok"
@@ -278,8 +275,8 @@ function get_Custom_configuration(){
     fast_Default_Ask "Whether to choose the certificate login?(y/n)" "n" "ca_login"
 #Which ocserv version to install 安装哪个版本的ocserv
     fast_Default_Ask "$OC_version_latest is the latest ocserv version,but default version is recommended.Which to choose?" "$Default_oc_version" "oc_version"
-#Force lz4 or not
-    fast_Default_Ask "Install liblz4-dev from jessie ,maybe it can destroy your system." "n" "oc_force_lz4"
+#Force to install lz4 form jessie or not
+    fast_Default_Ask "Force to install lz4 from jessie ,maybe it can destroy your system." "n" "oc_force_lz4"
 #Save user vars or not 是否保存脚本参数 以便于下次快速配置
     fast_Default_Ask "Save the vars for fast mode or not?" "n" "save_user_vars"
 }
@@ -288,17 +285,15 @@ function get_Custom_configuration(){
 function add_a_user(){
 #get username,4 figures default
     if [ "$ca_login" = "n" ]; then
-        Default_Ask "Input your username for ocserv:" "$(get_random_word 4)" "username"
+        fast_Default_Ask "Input your username for ocserv:" "$(get_random_word 4)" "username"
 #get password,6 figures default
         Default_Ask "Input your password for ocserv:" "$(get_random_word 6)" "password"
-        sed -i '/password=/d' $CONFIG_PATH_VARS
     fi
 #get password,if ca login,4 figures default
     if [ "$ca_login" = "y" ] && [ "$self_signed_ca" = "y" ]; then
         Default_Ask "Input your password for your p12-cert file:" "$(get_random_word 4)" "password"
-        sed -i '/password=/d' $CONFIG_PATH_VARS
-#get expiration days for client p12-cert
-        Default_Ask "Input the number of expiration days for your p12-cert file:" "7777" "oc_ex_days"
+#get expiration days for client p12-cert 获取客户端证书到期天数
+        fast_Default_Ask "Input the number of expiration days for your p12-cert file:" "7777" "oc_ex_days"
     fi
 }
 
@@ -332,7 +327,7 @@ function tar_lz4_install(){
     make install
     cd ..
     rm -r lz4
-    if [ `getconf WORD_BIT` = '32' ] && [ `getconf LONG_BIT` = '64' ] ; then
+    if [ `getconf WORD_BIT` = '32' ] && [ `getconf LONG_BIT` = '64' ]; then
         ln -sf /usr/local/lib/liblz4.* /usr/lib/x86_64-linux-gnu/
     else
         ln -sf /usr/local/lib/liblz4.* /usr/lib/i386-linux-gnu/
@@ -342,7 +337,7 @@ function tar_lz4_install(){
 
 #install freeradius-client 1.1.7
 function tar_freeradius_client_install(){
-    print_info "Installing freeradius-client"
+    print_info "Installing freeradius-client-1.1.7"
     wget -c ftp://ftp.freeradius.org/pub/freeradius/freeradius-client-1.1.7.tar.gz
     tar -zxf freeradius-client-1.1.7.tar.gz
     cd freeradius-client-1.1.7
@@ -359,13 +354,9 @@ function pre_install(){
     echo linux-image-`uname -r` hold | sudo dpkg --set-selections > /dev/null 2>&1
     apt-get upgrade -y
 #no upgrade from test sources 不升级不安装测试源其他包
-    if [ ! -d /etc/apt/preferences.d ];then
-        mkdir /etc/apt/preferences.d
-    fi
-    if [ ! -d /etc/apt/apt.conf.d ];then
-        mkdir /etc/apt/apt.conf.d
-    fi
-    cat > /etc/apt/preferences.d/my_ocserv_preferences<<EOF
+    [ ! -d /etc/apt/preferences.d ] && mkdir /etc/apt/preferences.d
+    [ ! -d /etc/apt/apt.conf.d ] && mkdir /etc/apt/apt.conf.d
+    cat > /etc/apt/preferences.d/my_ocserv_preferences<<'EOF'
 Package: *
 Pin: release wheezy
 Pin-Priority: 900
@@ -376,7 +367,7 @@ Package: *
 Pin: release jessie
 Pin-Priority: 60
 EOF
-    cat > /etc/apt/apt.conf.d/77ocserv<<EOF
+    cat > /etc/apt/apt.conf.d/77ocserv<<'EOF'
 APT::Install-Recommends "false";
 APT::Install-Suggests "false";
 APT::Get::Install-Recommends "false";
@@ -401,19 +392,15 @@ EOF
     oc_dependencies="liblz4-dev"
 #force-lz4 from debian jessie
     oc_force_lz4=${oc_force_lz4:-n}
-    if [ "$oc_force_lz4" = "y" ] ; then        
+    if [ "$oc_force_lz4" = "y" ]; then        
         TEST_S="-t jessie -f --force-yes"
         Dependencies_install_onebyone
     else
         tar_lz4_install
     fi
 #if sources del 如果本来没有测试源便删除
-    if [ "$oc_wheezy_backports" = "n" ]; then
-        sed -i '/wheezy-backports/d' /etc/apt/sources.list
-    fi
-    if [ "$oc_jessie" = "n" ]; then
-        sed -i '/jessie/d' /etc/apt/sources.list
-    fi
+    [ "$oc_wheezy_backports" = "n" ] && sed -i '/wheezy-backports/d' /etc/apt/sources.list
+    [ "$oc_jessie" = "n" ] && sed -i '/jessie/d' /etc/apt/sources.list
 #keep update
     rm -f /etc/apt/preferences.d/my_ocserv_preferences
     rm -f /etc/apt/apt.conf.d/77ocserv
@@ -571,7 +558,7 @@ echo "..."
 EOF
     chmod +x start-ocserv-sysctl.sh
     cat > stop-ocserv-sysctl.sh <<'EOF'
-#! /bin/bash
+#!/bin/bash
 
 # uncomment if you want to turn off IP forwarding
 # sysctl -w net.ipv4.ip_forward=0
@@ -668,10 +655,10 @@ _EOF_
     cp user-${name_user_ca}/user-${name_user_ca}.p12 /root
 #make a empty revocation list
     if [ ! -f crl.tmpl ];then
-    cat << EOF >crl.tmpl
+    cat << _EOF_ >crl.tmpl
 crl_next_update = 7777 
 crl_number = 1 
-EOF
+_EOF_
     certtool --generate-crl --load-ca-privkey ca-key.pem --load-ca-certificate ca-cert.pem --template crl.tmpl --outfile ../crl.pem
     fi
     print_info "Generate client cert ok"
@@ -708,8 +695,7 @@ function set_ocserv_conf(){
         sed -i 's|^[# /t]*\(crl = \).*|\1/etc/ocserv/crl.pem|' /etc/ocserv/ocserv.conf
         sed -i 's|^[# /t]*\(cert-user-oid = \).*|\12.5.4.3|' /etc/ocserv/ocserv.conf
     fi
-#save custom-configuration files or not ,del fqdnname
-    sed -i '/fqdnname=/d' $CONFIG_PATH_VARS
+#save custom-configuration files or not
     [ "$save_user_vars" = "n" ] && rm -f $CONFIG_PATH_VARS
     print_info "Set ocserv ok"
 }
@@ -835,7 +821,7 @@ function revoke_userca(){
     print_xxxx
     print_info "Which user do you want to revoke?"
     echo
-	read -p "Which: " -e -i user- revoke_ca
+    read -p "Which: " -e -i user- revoke_ca
     if [ ! -f /etc/ocserv/CAforOC/$revoke_ca/$revoke_ca-cert.pem ]
     then
         die "$revoke_ca NOT Found !!!"
@@ -843,7 +829,7 @@ function revoke_userca(){
     echo
     print_warn "Okay,${revoke_ca} will be revoked."
     print_xxxx
-	press_any_key
+    press_any_key
 #revoke   
     cat ${revoke_ca}/${revoke_ca}-cert.pem >>revoked.pem
     certtool --generate-crl --load-ca-privkey ca-key.pem --load-ca-certificate ca-cert.pem --load-certificate revoked.pem --template crl.tmpl --outfile ../crl.pem
@@ -863,11 +849,9 @@ function reinstall_ocserv(){
 }
 
 function upgrade_ocserv(){    
-    [ ! -f $CONFIG_PATH_VARS ] && save_user_vars="n"
     OC_version_latest=$(curl -s "http://www.infradead.org/ocserv/download.html" | sed -n 's/^.*version is <b>\(.*$\)/\1/p')
     Default_Ask "The latest is ${OC_version_latest}.Input the version you want to upgrade?" "$OC_version_latest" "oc_version"
     Default_Ask "The maximum number of routing table rules?" "200" "max_router"
-    [ "$save_user_vars" = "n" ] && rm -f $CONFIG_PATH_VARS
     press_any_key
     stop_ocserv
     rm -f /etc/dbus-1/system.d/org.infradead.ocserv.conf
@@ -970,10 +954,8 @@ fastmode | fm)
     install_OpenConnect_VPN_server
     ;;
 getuserca | gc)
-    [ ! -f $CONFIG_PATH_VARS ] && save_user_vars="n"
     get_new_userca
     get_new_userca_show
-    [ "$save_user_vars" = "n" ] && rm -f $CONFIG_PATH_VARS
     ;;
 revokeuserca | rc)
     revoke_userca
@@ -985,10 +967,8 @@ reinstall | ri)
     reinstall_ocserv
     ;;
 pc)
-    [ ! -f $CONFIG_PATH_VARS ] && save_user_vars="n"
     [  -f /etc/ocserv/crl.pem ] && enable_both_login_open_plain
     [ ! -f /etc/ocserv/crl.pem ] && enable_both_login_open_ca
-    [ "$save_user_vars" = "n" ] && rm -f $CONFIG_PATH_VARS
     ;;
 help | h)
     help_ocservauto
