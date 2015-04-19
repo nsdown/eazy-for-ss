@@ -259,7 +259,6 @@ conn %default
     leftsubnet=0.0.0.0/0
     leftcert=vpnHostCert.pem
     right=%any
-    rightid="C=CN, O=strongSwan, CN=*" 
     rightsourceip=10.89.32.0/24
 
 # compatible with "strongSwan VPN Client" for Android 4.0+
@@ -296,6 +295,7 @@ conn iOS_cert
 
 # for psk mode 
 conn ios_android_xauth_psk
+    fragmentation=yes
     keyexchange=ikev1
     leftauth=psk
     rightauth=psk
