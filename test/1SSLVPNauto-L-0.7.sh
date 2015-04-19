@@ -62,7 +62,7 @@ function Default_Ask(){
         Temp_default_var=${New_temp_default_var:-$Temp_default_var}
     fi
 #if yes or no 
-    echo -e -n "\e[1;36m$Temp_question\e[0m""\033[31m(Default:$Temp_default_var): \033[0m"
+    echo -e -n "\e[1;36m$Temp_question\e[0m""\033[31m(Default:$Temp_default_var)\033[0m"
     echo
     read Temp_var
     if [ "$Temp_default_var" = "y" ] || [ "$Temp_default_var" = "n" ]; then
@@ -248,16 +248,16 @@ function get_Custom_configuration(){
 #whether to make a Self-signed CA 是否需要制作自签名证书
     fast_Default_Ask "Make a Self-signed CA for your server?(y/n)" "y" "self_signed_ca"
     if [ "$self_signed_ca" = "n" ]; then
-        Default_Ask "Input your own domain for ocserv:" "$ocserv_hostname" "fqdnname"
+        Default_Ask "Input your own domain for ocserv." "$ocserv_hostname" "fqdnname"
     else 
 #get CA's name
-        fast_Default_Ask "Your CA's name:" "ocvpn" "caname"
+        fast_Default_Ask "Your CA's name?" "ocvpn" "caname"
 #get Organization name
-        fast_Default_Ask "Your Organization name:" "ocvpn" "ogname"
+        fast_Default_Ask "Your Organization name?" "ocvpn" "ogname"
 #get Company name
-        fast_Default_Ask "Your Company name:" "ocvpn" "coname"
+        fast_Default_Ask "Your Company name?" "ocvpn" "coname"
 #get server's FQDN
-        Default_Ask "Your server's FQDN:" "$ocserv_hostname" "fqdnname"
+        Default_Ask "Your server's FQDN?" "$ocserv_hostname" "fqdnname"
     fi
 #set max router rulers 最大路由规则限制数目
     fast_Default_Ask "The maximum number of routing table rules?" "200" "max_router"
@@ -274,7 +274,7 @@ function get_Custom_configuration(){
 #whether to use the certificate login 是否证书登录或者用户名密码登录
     fast_Default_Ask "Whether to choose the certificate login?(y/n)" "n" "ca_login"
 #Which ocserv version to install 安装哪个版本的ocserv
-    fast_Default_Ask "$OC_version_latest is the latest ocserv version,but default version is recommended.Which to choose?" "$Default_oc_version" "oc_version"
+    fast_Default_Ask "$OC_version_latest is the latest,but default version is recommended.Which to choose?" "$Default_oc_version" "oc_version"
 #Force to install lz4 form jessie or not
     fast_Default_Ask "Force to install lz4 from jessie ,maybe it can destroy your system." "n" "oc_force_lz4"
 #Save user vars or not 是否保存脚本参数 以便于下次快速配置
@@ -285,15 +285,15 @@ function get_Custom_configuration(){
 function add_a_user(){
 #get username,4 figures default
     if [ "$ca_login" = "n" ]; then
-        fast_Default_Ask "Input your username for ocserv:" "$(get_random_word 4)" "username"
+        fast_Default_Ask "Input your username for ocserv." "$(get_random_word 4)" "username"
 #get password,6 figures default
-        Default_Ask "Input your password for ocserv:" "$(get_random_word 6)" "password"
+        Default_Ask "Input your password for ocserv." "$(get_random_word 6)" "password"
     fi
 #get password,if ca login,4 figures default
     if [ "$ca_login" = "y" ] && [ "$self_signed_ca" = "y" ]; then
-        Default_Ask "Input your password for your p12-cert file:" "$(get_random_word 4)" "password"
+        Default_Ask "Input your password for your p12-cert file." "$(get_random_word 4)" "password"
 #get expiration days for client p12-cert 获取客户端证书到期天数
-        fast_Default_Ask "Input the number of expiration days for your p12-cert file:" "7777" "oc_ex_days"
+        fast_Default_Ask "Input the number of expiration days for your p12-cert file." "7777" "oc_ex_days"
     fi
 }
 
