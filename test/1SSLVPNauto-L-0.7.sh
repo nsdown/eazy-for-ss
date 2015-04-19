@@ -577,8 +577,9 @@ EOF
         print_info "Perhaps generate DH parameters will take some time , please wait..."
         certtool --generate-dh-params --sec-param high --outfile dh.pem
     fi
-    echo ""
+    clear
     print_info "Ocserv install ok"
+    
 }
 
 function make_ocserv_ca(){
