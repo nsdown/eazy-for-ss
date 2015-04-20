@@ -689,7 +689,7 @@ function set_ocserv_conf(){
     [ "$ocserv_boot_start" = "y" ] && sudo insserv ocserv
 #add a user 增加一个初始用户
     if [ "$ca_login" = "n" ]; then
-        (echo "$password"; sleep 1; echo "$password") | ocpasswd "-c /etc/ocserv/ocpasswd"  -g "Client" $username
+        (echo "$password"; sleep 1; echo "$password") | ocpasswd -c "/etc/ocserv/ocpasswd"  -g "Client" $username
     fi
 #set only tcp-port 仅仅使用tcp端口
     [ "$only_tcp_port" = "y" ] && sed -i 's|^[ /t]*\(udp-port = \)|#\1|' /etc/ocserv/ocserv.conf
@@ -898,7 +898,7 @@ function enable_both_login_open_plain(){
     ca_login="n"
     add_a_user
     press_any_key
-    (echo "$password"; sleep 1; echo "$password") | ocpasswd "-c /etc/ocserv/ocpasswd"  -g "Client" $username
+    (echo "$password"; sleep 1; echo "$password") | ocpasswd -c "/etc/ocserv/ocpasswd"  -g "Client" $username
     sed -i 's|^[ /t]*\(auth = "certificate"\)|#\1|' /etc/ocserv/ocserv.conf
     sed -i 's|^[# /t]*\(auth = "plain\)|\1|' /etc/ocserv/ocserv.conf
     sed -i 's|^[# /t]*\(enable-auth = certificate\)|\1|' /etc/ocserv/ocserv.conf
