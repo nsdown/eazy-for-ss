@@ -640,7 +640,7 @@ function ca_login_ocserv(){
     mkdir user-${name_user_ca}
     oc_ex_days=${oc_ex_days:-7777}
     cat << _EOF_ > user-${name_user_ca}/user.tmpl
-cn = "Client ${name_user_ca}"
+cn = "Client-${name_user_ca}"
 unit = "Client"
 expiration_days = ${oc_ex_days}
 signing_key
@@ -680,11 +680,16 @@ function set_ocserv_conf(){
     sed -i "s|^[# /t]*\(default-domain = \).*|\1$fqdnname|" /etc/ocserv/ocserv.conf
     sed -i "s|^[# /t]*\(compression = \).*|\1true|" /etc/ocserv/ocserv.conf
     sed -i 's|^[# /t]*\(dh-params = \).*|\1/etc/ocserv/dh.pem|' /etc/ocserv/ocserv.conf
+#2-group
+    sed -i 's|^[# /t]*\(select-group = \)group1.*|\1Client\[Route\]|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# /t]*\(default-select-group = \).*|\1All|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# /t]*\(auto-select-group = \).*|\1false|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# /t]*\(config-per-group = \).*|\1/etc/ocserv/config-per-group/|' /etc/ocserv/ocserv.conf
 #boot from the start 开机自启
     [ "$ocserv_boot_start" = "y" ] && sudo insserv ocserv
 #add a user 增加一个初始用户
     if [ "$ca_login" = "n" ]; then
-        (echo "$password"; sleep 1; echo "$password") | ocpasswd -c "/etc/ocserv/ocpasswd" $username
+        (echo "$password"; sleep 1; echo "$password") | ocpasswd "-c /etc/ocserv/ocpasswd"  -g "Client" $username
     fi
 #set only tcp-port 仅仅使用tcp端口
     [ "$only_tcp_port" = "y" ] && sed -i 's|^[ /t]*\(udp-port = \)|#\1|' /etc/ocserv/ocserv.conf
@@ -695,6 +700,7 @@ function set_ocserv_conf(){
         sed -i 's|^[# /t]*\(ca-cert = \).*|\1/etc/ocserv/ca-cert.pem|' /etc/ocserv/ocserv.conf
         sed -i 's|^[# /t]*\(crl = \).*|\1/etc/ocserv/crl.pem|' /etc/ocserv/ocserv.conf
         sed -i 's|^[# /t]*\(cert-user-oid = \).*|\12.5.4.3|' /etc/ocserv/ocserv.conf
+        sed -i 's|^[# /t]*\(cert-group-oid = \).*|\12.5.4.11|' /etc/ocserv/ocserv.conf
     fi
 #save custom-configuration files or not
     [ "$save_user_vars" = "n" ] && rm -f $CONFIG_PATH_VARS
@@ -878,6 +884,7 @@ function enable_both_login_open_ca(){
     sed -i 's|^[# /t]*\(ca-cert = \).*|\1/etc/ocserv/ca-cert.pem|' /etc/ocserv/ocserv.conf
     sed -i 's|^[# /t]*\(crl = \).*|\1/etc/ocserv/crl.pem|' /etc/ocserv/ocserv.conf
     sed -i 's|^[# /t]*\(cert-user-oid = \).*|\12.5.4.3|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# /t]*\(cert-group-oid = \).*|\12.5.4.11|' /etc/ocserv/ocserv.conf
     stop_ocserv
     start_ocserv
     clear
@@ -891,7 +898,7 @@ function enable_both_login_open_plain(){
     ca_login="n"
     add_a_user
     press_any_key
-    (echo "$password"; sleep 1; echo "$password") | ocpasswd -c "/etc/ocserv/ocpasswd" $username
+    (echo "$password"; sleep 1; echo "$password") | ocpasswd "-c /etc/ocserv/ocpasswd"  -g "Client" $username
     sed -i 's|^[ /t]*\(auth = "certificate"\)|#\1|' /etc/ocserv/ocserv.conf
     sed -i 's|^[# /t]*\(auth = "plain\)|\1|' /etc/ocserv/ocserv.conf
     sed -i 's|^[# /t]*\(enable-auth = certificate\)|\1|' /etc/ocserv/ocserv.conf
@@ -950,7 +957,7 @@ CONFIG_PATH_VARS="/root/ocservauto_vars"
 #ocserv配置文件所在的网络文件夹位置
 OC_CONF_NET_DOC="https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto"
 #推荐的默认版本
-Default_oc_version="0.10.1"
+Default_oc_version="0.10.2"
 
 #Initialization step
 action=$1
