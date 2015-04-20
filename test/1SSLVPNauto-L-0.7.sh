@@ -432,6 +432,7 @@ function tar_ocserv_install(){
 #mv files
     rm -f /root/ocerror.log
     mkdir -p /etc/ocserv/CAforOC/revoke
+    mkdir /etc/ocserv/config-per-group
     cp doc/profile.xml /etc/ocserv
     cp doc/dbus/org.infradead.ocserv.conf /etc/dbus-1/system.d
     cd ..
@@ -573,6 +574,9 @@ EOF
     while [ ! -f ocserv.conf ]; do
         wget -c $OC_CONF_NET_DOC/ocserv.conf --no-check-certificate
     done
+    while [ ! -f config-per-group/Client ]; do
+        wget -c $OC_CONF_NET_DOC/routerulers -O config-per-group/Client --no-check-certificate
+    done
     if [ ! -f dh.pem ]; then
         print_info "Perhaps generate DH parameters will take some time , please wait..."
         certtool --generate-dh-params --sec-param high --outfile dh.pem
@@ -688,23 +692,29 @@ function set_ocserv_conf(){
 #boot from the start 开机自启
     [ "$ocserv_boot_start" = "y" ] && sudo insserv ocserv
 #add a user 增加一个初始用户
-    if [ "$ca_login" = "n" ]; then
-        (echo "$password"; sleep 1; echo "$password") | ocpasswd -c "/etc/ocserv/ocpasswd"  -g "Client" $username
-    fi
+    [ "$ca_login" = "n" ] && plain_login_set
 #set only tcp-port 仅仅使用tcp端口
     [ "$only_tcp_port" = "y" ] && sed -i 's|^[ /t]*\(udp-port = \)|#\1|' /etc/ocserv/ocserv.conf
 #set ca_login
     if [ "$ca_login" = "y" ]; then
         sed -i 's|^[ /t]*\(auth = "plain\)|#\1|' /etc/ocserv/ocserv.conf
         sed -i 's|^[# /t]*\(auth = "certificate"\)|\1|' /etc/ocserv/ocserv.conf
-        sed -i 's|^[# /t]*\(ca-cert = \).*|\1/etc/ocserv/ca-cert.pem|' /etc/ocserv/ocserv.conf
-        sed -i 's|^[# /t]*\(crl = \).*|\1/etc/ocserv/crl.pem|' /etc/ocserv/ocserv.conf
-        sed -i 's|^[# /t]*\(cert-user-oid = \).*|\12.5.4.3|' /etc/ocserv/ocserv.conf
-        sed -i 's|^[# /t]*\(cert-group-oid = \).*|\12.5.4.11|' /etc/ocserv/ocserv.conf
+        ca_login_set
     fi
 #save custom-configuration files or not
     [ "$save_user_vars" = "n" ] && rm -f $CONFIG_PATH_VARS
     print_info "Set ocserv ok"
+}
+
+function plain_login_set(){
+    (echo "$password"; sleep 1; echo "$password") | ocpasswd "-c /etc/ocserv/ocpasswd"  -g "Client" $username
+}
+
+function ca_login_set(){
+    sed -i 's|^[# /t]*\(ca-cert = \).*|\1/etc/ocserv/ca-cert.pem|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# /t]*\(crl = \).*|\1/etc/ocserv/crl.pem|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# /t]*\(cert-user-oid = \).*|\12.5.4.3|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# /t]*\(cert-group-oid = \).*|\12.5.4.11|' /etc/ocserv/ocserv.conf
 }
 
 function stop_ocserv(){
@@ -898,7 +908,7 @@ function enable_both_login_open_plain(){
     ca_login="n"
     add_a_user
     press_any_key
-    (echo "$password"; sleep 1; echo "$password") | ocpasswd -c "/etc/ocserv/ocpasswd"  -g "Client" $username
+    (echo "$password"; sleep 1; echo "$password") | ocpasswd "-c /etc/ocserv/ocpasswd"  -g "Client" $username
     sed -i 's|^[ /t]*\(auth = "certificate"\)|#\1|' /etc/ocserv/ocserv.conf
     sed -i 's|^[# /t]*\(auth = "plain\)|\1|' /etc/ocserv/ocserv.conf
     sed -i 's|^[# /t]*\(enable-auth = certificate\)|\1|' /etc/ocserv/ocserv.conf
@@ -957,7 +967,7 @@ CONFIG_PATH_VARS="/root/ocservauto_vars"
 #ocserv配置文件所在的网络文件夹位置
 OC_CONF_NET_DOC="https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto"
 #推荐的默认版本
-Default_oc_version="0.10.2"
+Default_oc_version="0.10.1"
 
 #Initialization step
 action=$1
