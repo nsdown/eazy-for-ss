@@ -294,7 +294,7 @@ function get_Custom_configuration(){
 function add_a_user(){
 #get username,4 figures default
     if [ "$ca_login" = "n" ]; then
-        fast_Default_Ask "Input your username for ocserv." "$(get_random_word 4)" "username"
+        Default_Ask "Input your username for ocserv." "$(get_random_word 4)" "username"
 #get password,6 figures default
         Default_Ask "Input your password for ocserv." "$(get_random_word 6)" "password"
     fi
@@ -302,7 +302,7 @@ function add_a_user(){
     if [ "$ca_login" = "y" ] && [ "$self_signed_ca" = "y" ]; then
         Default_Ask "Input your password for your p12-cert file." "$(get_random_word 4)" "password"
 #get expiration days for client p12-cert 获取客户端证书到期天数
-        fast_Default_Ask "Input the number of expiration days for your p12-cert file." "7777" "oc_ex_days"
+        Default_Ask "Input the number of expiration days for your p12-cert file." "7777" "oc_ex_days"
     fi
 }
 
@@ -707,7 +707,7 @@ function two_group_set(){
 }
 
 function plain_login_set(){
-    (echo "$password"; sleep 1; echo "$password") | ocpasswd "-c /etc/ocserv/ocpasswd"  -g "Route" $username
+    (echo "$password"; sleep 1; echo "$password") | ocpasswd -c /etc/ocserv/ocpasswd -g "Route" $username
 }
 
 function ca_login_set(){
