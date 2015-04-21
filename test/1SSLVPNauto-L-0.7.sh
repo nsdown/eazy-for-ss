@@ -427,8 +427,8 @@ function tar_ocserv_install(){
     [ ! -f /usr/sbin/ocserv ] && die "Ocserv install failure,check /root/ocerror.log"
 #mv files
     rm -f /root/ocerror.log
-    mkdir -p /etc/ocserv/CAforOC/revoke
-    mkdir /etc/ocserv/config-per-group
+    mkdir -p /etc/ocserv/CAforOC/revoke > /dev/null 2>&1
+    mkdir /etc/ocserv/{config-per-group,defaults} > /dev/null 2>&1
     cp doc/profile.xml /etc/ocserv
     sed -i "s|localhost|$ocserv_hostname|" /etc/ocserv/profile.xml
     cp doc/dbus/org.infradead.ocserv.conf /etc/dbus-1/system.d
@@ -680,8 +680,12 @@ function set_ocserv_conf(){
     sed -i "s|^[# \t]*\(default-domain = \).*|\1$fqdnname|" /etc/ocserv/ocserv.conf
     sed -i "s|^[# \t]*\(compression = \).*|\1true|" /etc/ocserv/ocserv.conf
     sed -i 's|^[# \t]*\(dh-params = \).*|\1/etc/ocserv/dh.pem|' /etc/ocserv/ocserv.conf
-#2-group
-    two_group_set
+#2-group 增加组 bug 证书登录无法正常使用Default组
+#    two_group_set
+    echo "route = 0.0.0.0/128.0.0.0" > /etc/ocserv/defaults/group.conf
+    echo "route = 128.0.0.0/128.0.0.0" >> /etc/ocserv/defaults/group.conf
+    echo "route = 0.0.0.0/128.0.0.0" > /etc/ocserv/config-per-group/All
+    echo "route = 128.0.0.0/128.0.0.0" >> /etc/ocserv/config-per-group/All
 #boot from the start 开机自启
     [ "$ocserv_boot_start" = "y" ] && sudo insserv ocserv
 #add a user 增加一个初始用户
@@ -701,13 +705,16 @@ function set_ocserv_conf(){
 
 function two_group_set(){
     sed -i 's|^[# \t]*\(select-group = \)group1.*|\1Route|' /etc/ocserv/ocserv.conf
-    sed -i 's|^[# \t]*\(default-select-group = \).*|\1All|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# \t]*\(select-group = \)group2.*|\1All|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# \t]*\(default-select-group = \).*|\1Default|' /etc/ocserv/ocserv.conf
     sed -i 's|^[# \t]*\(auto-select-group = \).*|\1false|' /etc/ocserv/ocserv.conf
     sed -i 's|^[# \t]*\(config-per-group = \).*|\1/etc/ocserv/config-per-group|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# \t]*\(default-group-config = \).*|\1/etc/ocserv/defaults/group.conf|' /etc/ocserv/ocserv.conf
 }
 
 function plain_login_set(){
-    (echo "$password"; sleep 1; echo "$password") | ocpasswd -c /etc/ocserv/ocpasswd -g "Route" $username
+#    group_name='-g "Route,All"'
+    (echo "$password"; sleep 1; echo "$password") | ocpasswd -c /etc/ocserv/ocpasswd $group_name $username
 }
 
 function ca_login_set(){
