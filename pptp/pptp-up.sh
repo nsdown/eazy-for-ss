@@ -9,7 +9,7 @@ sysctl -w net.ipv4.ip_forward=1 > /dev/null 2>&1
 
 #get gateway and profiles
 GATEWAY=`ip route show|sed -n 's/^default.* dev \([^ ]*\).*/\1/p'`
-pptp_ip4_work_mask=`sed -n 's|^localip[ /t]*\(.*\..*\..*\.\).*|\10/24|p' $PPTP_CONFIG`
+pptp_ip4_work_mask=`sed -n 's|^localip[ \t]*\(.*\..*\..*\.\).*|\10/24|p' $PPTP_CONFIG`
 
 
 # turn on NAT over default gateway and VPN
