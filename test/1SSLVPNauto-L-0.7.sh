@@ -6,7 +6,23 @@
 #   Ocservauto For Debian Copyright (C) liyangyijie released under GNU GPLv2
 #   Ocservauto For Debian Is Based On SSLVPNauto v0.1-A1
 #   SSLVPNauto v0.1-A1 For Debian Copyright (C) Alex Fang frjalex@gmail.com released under GNU GPLv2
-#   
+#   Thanks For
+#   http://www.infradead.org/ocserv/
+#   https://www.stunnel.info  Travis Lee
+#   http://luoqkk.com/ luoqkk
+#   http://ttz.im/ tony
+#   http://blog.ltns.info/ LTNS
+#   https://github.com/clowwindy/ShadowVPN (server up/down script)
+#   http://imkevin.me/post/80157872840/anyconnect-iphone
+#   http://bitinn.net/11084/
+#   http://zkxtom365.blogspot.jp/2015/02/centos-65ocservcisco-anyconnect.html
+#   https://registry.hub.docker.com/u/tommylau/ocserv/dockerfile/
+#   https://www.v2ex.com/t/158768
+#   https://www.v2ex.com/t/165541
+#   https://www.v2ex.com/t/172292
+#   https://www.v2ex.com/t/170472
+#   https://sskaje.me/2014/02/openconnect-ubuntu/
+#   https://github.com/humiaozuzu/ocserv-build/tree/master/config
 #===============================================================================================
 
 ###################################################################################################################
@@ -224,12 +240,6 @@ function check_Required(){
     fi
     print_info "Get ip and base-tools ok"
 #sources check,del test sources 去掉测试源 
-    cat /etc/apt/sources.list | grep -v '^#' | grep 'jessie' > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        oc_jessie="n"
-     else
-        sed -i '/jessie/d' /etc/apt/sources.list
-    fi
     cat /etc/apt/sources.list | grep -v '^#' | grep 'wheezy-backports' > /dev/null 2>&1
     if [ $? -ne 0 ]; then
         oc_wheezy_backports="n"
@@ -275,8 +285,6 @@ function get_Custom_configuration(){
     fast_Default_Ask "Whether to choose the certificate login?(y/n)" "n" "ca_login"
 #Which ocserv version to install 安装哪个版本的ocserv
     fast_Default_Ask "$OC_version_latest is the latest,but default version is recommended.Which to choose?" "$Default_oc_version" "oc_version"
-#Force to install lz4 form jessie or not
-    fast_Default_Ask "Force to install lz4 from jessie ,maybe it can destroy your system." "n" "oc_force_lz4"
 #Save user vars or not 是否保存脚本参数 以便于下次快速配置
     fast_Default_Ask "Save the vars for fast mode or not?" "n" "save_user_vars"
 }
@@ -380,7 +388,6 @@ EOF
     Dependencies_install_onebyone
 #add test source 
     echo "deb http://ftp.debian.org/debian wheezy-backports main contrib non-free" >> /etc/apt/sources.list
-    echo "deb http://ftp.debian.org/debian jessie main contrib non-free" >> /etc/apt/sources.list
     apt-get update
 #install dependencies from wheezy-backports
     oc_dependencies="libgnutls28-dev libseccomp-dev" && TEST_S="-t wheezy-backports -f --force-yes"
@@ -389,18 +396,10 @@ EOF
     tar_freeradius_client_install
 #install dependencies lz4  增加lz4压缩必须包
 #   oc_dependencies="libprotobuf-c-dev libhttp-parser-dev liblz4-dev"
-    oc_dependencies="liblz4-dev"
-#force-lz4 from debian jessie
-    oc_force_lz4=${oc_force_lz4:-n}
-    if [ "$oc_force_lz4" = "y" ]; then        
-        TEST_S="-t jessie -f --force-yes"
-        Dependencies_install_onebyone
-    else
+#lz4
         tar_lz4_install
-    fi
 #if sources del 如果本来没有测试源便删除
     [ "$oc_wheezy_backports" = "n" ] && sed -i '/wheezy-backports/d' /etc/apt/sources.list
-    [ "$oc_jessie" = "n" ] && sed -i '/jessie/d' /etc/apt/sources.list
 #keep update
     rm -f /etc/apt/preferences.d/my_ocserv_preferences
     rm -f /etc/apt/apt.conf.d/77ocserv
@@ -434,6 +433,7 @@ function tar_ocserv_install(){
     mkdir -p /etc/ocserv/CAforOC/revoke
     mkdir /etc/ocserv/config-per-group
     cp doc/profile.xml /etc/ocserv
+    sed -i "s|localhost|$ocserv_hostname|" /etc/ocserv/profile.xml
     cp doc/dbus/org.infradead.ocserv.conf /etc/dbus-1/system.d
     cd ..
     rm -rf ocserv-$oc_version
@@ -526,9 +526,9 @@ sysctl -w net.ipv4.ip_forward=1 > /dev/null 2>&1
 
 #get gateway and profiles
 gw_intf_oc=`ip route show|sed -n 's/^default.* dev \([^ ]*\).*/\1/p'`
-ocserv_tcpport=`sed -n 's/^tcp-.*=[ /t]*//p' $OCSERV_CONFIG`
-ocserv_udpport=`sed -n 's/^udp-.*=[ /t]*//p' $OCSERV_CONFIG`
-ocserv_ip4_work_mask=`sed -n 's/^ipv4-.*=[ /t]*//p' $OCSERV_CONFIG|sed 'N;s|\n|/|g'`
+ocserv_tcpport=`sed -n 's/^tcp-.*=[ \t]*//p' $OCSERV_CONFIG`
+ocserv_udpport=`sed -n 's/^udp-.*=[ \t]*//p' $OCSERV_CONFIG`
+ocserv_ip4_work_mask=`sed -n 's/^ipv4-.*=[ \t]*//p' $OCSERV_CONFIG|sed 'N;s|\n|/|g'`
 
 # turn on NAT over default gateway and VPN
 if !(iptables-save -t nat | grep -q "$gw_intf_oc (ocserv)"); then
@@ -681,24 +681,24 @@ function set_ocserv_conf(){
     sed -i "s|\(tcp-port = \).*|\1$ocserv_tcpport_set|" /etc/ocserv/ocserv.conf
     sed -i "s|\(udp-port = \).*|\1$ocserv_udpport_set|" /etc/ocserv/ocserv.conf
 #default domain compression dh.pem
-    sed -i "s|^[# /t]*\(default-domain = \).*|\1$fqdnname|" /etc/ocserv/ocserv.conf
-    sed -i "s|^[# /t]*\(compression = \).*|\1true|" /etc/ocserv/ocserv.conf
-    sed -i 's|^[# /t]*\(dh-params = \).*|\1/etc/ocserv/dh.pem|' /etc/ocserv/ocserv.conf
+    sed -i "s|^[# \t]*\(default-domain = \).*|\1$fqdnname|" /etc/ocserv/ocserv.conf
+    sed -i "s|^[# \t]*\(compression = \).*|\1true|" /etc/ocserv/ocserv.conf
+    sed -i 's|^[# \t]*\(dh-params = \).*|\1/etc/ocserv/dh.pem|' /etc/ocserv/ocserv.conf
 #2-group
-    sed -i 's|^[# /t]*\(select-group = \)group1.*|\1Client\[Route\]|' /etc/ocserv/ocserv.conf
-    sed -i 's|^[# /t]*\(default-select-group = \).*|\1All|' /etc/ocserv/ocserv.conf
-    sed -i 's|^[# /t]*\(auto-select-group = \).*|\1false|' /etc/ocserv/ocserv.conf
-    sed -i 's|^[# /t]*\(config-per-group = \).*|\1/etc/ocserv/config-per-group/|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# \t]*\(select-group = \)group1.*|\1Client\[Route\]|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# \t]*\(default-select-group = \).*|\1All|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# \t]*\(auto-select-group = \).*|\1false|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# \t]*\(config-per-group = \).*|\1/etc/ocserv/config-per-group/|' /etc/ocserv/ocserv.conf
 #boot from the start 开机自启
     [ "$ocserv_boot_start" = "y" ] && sudo insserv ocserv
 #add a user 增加一个初始用户
     [ "$ca_login" = "n" ] && plain_login_set
 #set only tcp-port 仅仅使用tcp端口
-    [ "$only_tcp_port" = "y" ] && sed -i 's|^[ /t]*\(udp-port = \)|#\1|' /etc/ocserv/ocserv.conf
+    [ "$only_tcp_port" = "y" ] && sed -i 's|^[ \t]*\(udp-port = \)|#\1|' /etc/ocserv/ocserv.conf
 #set ca_login
     if [ "$ca_login" = "y" ]; then
-        sed -i 's|^[ /t]*\(auth = "plain\)|#\1|' /etc/ocserv/ocserv.conf
-        sed -i 's|^[# /t]*\(auth = "certificate"\)|\1|' /etc/ocserv/ocserv.conf
+        sed -i 's|^[ \t]*\(auth = "plain\)|#\1|' /etc/ocserv/ocserv.conf
+        sed -i 's|^[# \t]*\(auth = "certificate"\)|\1|' /etc/ocserv/ocserv.conf
         ca_login_set
     fi
 #save custom-configuration files or not
@@ -711,10 +711,10 @@ function plain_login_set(){
 }
 
 function ca_login_set(){
-    sed -i 's|^[# /t]*\(ca-cert = \).*|\1/etc/ocserv/ca-cert.pem|' /etc/ocserv/ocserv.conf
-    sed -i 's|^[# /t]*\(crl = \).*|\1/etc/ocserv/crl.pem|' /etc/ocserv/ocserv.conf
-    sed -i 's|^[# /t]*\(cert-user-oid = \).*|\12.5.4.3|' /etc/ocserv/ocserv.conf
-    sed -i 's|^[# /t]*\(cert-group-oid = \).*|\12.5.4.11|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# \t]*\(ca-cert = \).*|\1/etc/ocserv/ca-cert.pem|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# \t]*\(crl = \).*|\1/etc/ocserv/crl.pem|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# \t]*\(cert-user-oid = \).*|\12.5.4.3|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# \t]*\(cert-group-oid = \).*|\12.5.4.11|' /etc/ocserv/ocserv.conf
 }
 
 function stop_ocserv(){
@@ -876,7 +876,7 @@ function upgrade_ocserv(){
     stop_ocserv
     rm -f /etc/dbus-1/system.d/org.infradead.ocserv.conf
     rm -f /etc/ocserv/profile.xml
-    rm -rf /usr/sbin/ocserv
+    rm -f /usr/sbin/ocserv
     tar_ocserv_install
     start_ocserv
     ps -ef | grep -v grep | grep -v ps | grep -i '/usr/sbin/ocserv' > /dev/null 2>&1
@@ -890,11 +890,8 @@ function upgrade_ocserv(){
 
 function enable_both_login_open_ca(){
     get_new_userca
-    sed -i 's|^[# /t]*\(enable-auth = certificate\)|\1|' /etc/ocserv/ocserv.conf
-    sed -i 's|^[# /t]*\(ca-cert = \).*|\1/etc/ocserv/ca-cert.pem|' /etc/ocserv/ocserv.conf
-    sed -i 's|^[# /t]*\(crl = \).*|\1/etc/ocserv/crl.pem|' /etc/ocserv/ocserv.conf
-    sed -i 's|^[# /t]*\(cert-user-oid = \).*|\12.5.4.3|' /etc/ocserv/ocserv.conf
-    sed -i 's|^[# /t]*\(cert-group-oid = \).*|\12.5.4.11|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# \t]*\(enable-auth = certificate\)|\1|' /etc/ocserv/ocserv.conf
+    ca_login_set
     stop_ocserv
     start_ocserv
     clear
@@ -908,10 +905,10 @@ function enable_both_login_open_plain(){
     ca_login="n"
     add_a_user
     press_any_key
-    (echo "$password"; sleep 1; echo "$password") | ocpasswd "-c /etc/ocserv/ocpasswd"  -g "Client" $username
-    sed -i 's|^[ /t]*\(auth = "certificate"\)|#\1|' /etc/ocserv/ocserv.conf
-    sed -i 's|^[# /t]*\(auth = "plain\)|\1|' /etc/ocserv/ocserv.conf
-    sed -i 's|^[# /t]*\(enable-auth = certificate\)|\1|' /etc/ocserv/ocserv.conf
+    plain_login_set
+    sed -i 's|^[ \t]*\(auth = "certificate"\)|#\1|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# \t]*\(auth = "plain\)|\1|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# \t]*\(enable-auth = certificate\)|\1|' /etc/ocserv/ocserv.conf
     stop_ocserv
     start_ocserv
     clear
@@ -963,7 +960,7 @@ echo
 echo "==============================================================================================="
 
 #fastmode vars 存放配置参数文件的绝对路径，快速安装模式可用
-CONFIG_PATH_VARS="/root/ocservauto_vars"
+CONFIG_PATH_VARS="/root/vars_ocservauto"
 #ocserv配置文件所在的网络文件夹位置
 OC_CONF_NET_DOC="https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto"
 #推荐的默认版本
