@@ -251,6 +251,8 @@ config setup
 conn %default
     ikelifetime=24h
     keylife=24h
+    ike=aes128-sha256-ecp256,aes256-sha384-ecp384,aes128-sha256-modp2048,aes128-sha1-modp2048,aes256-sha384-modp4096,aes256-sha256-modp4096,aes256-sha1-modp4096,aes128-sha256-modp1536,aes128-sha1-modp1536,aes256-sha384-modp2048,aes256-sha256-modp2048,aes256-sha1-modp2048,aes128-sha256-modp1024,aes128-sha1-modp1024,aes256-sha384-modp1536,aes256-sha256-modp1536,aes256-sha1-modp1536,aes256-sha384-modp1024,aes256-sha256-modp1024,aes256-sha1-modp1024!
+    esp=aes128gcm16-ecp256,aes256gcm16-ecp384,aes128-sha256-ecp256,aes256-sha384-ecp384,aes128-sha256-modp2048,aes128-sha1-modp2048,aes256-sha384-modp4096,aes256-sha256-modp4096,aes256-sha1-modp4096,aes128-sha256-modp1536,aes128-sha1-modp1536,aes256-sha384-modp2048,aes256-sha256-modp2048,aes256-sha1-modp2048,aes128-sha256-modp1024,aes128-sha1-modp1024,aes256-sha384-modp1536,aes256-sha256-modp1536,aes256-sha1-modp1536,aes256-sha384-modp1024,aes256-sha256-modp1024,aes256-sha1-modp1024,aes128gcm16,aes256gcm16,aes128-sha256,aes128-sha1,aes256-sha384,aes256-sha256,aes256-sha1!
     dpdaction=clear
     dpdtimeout=3600s
     dpddelay=3600s
@@ -358,7 +360,7 @@ sysctl -w net.ipv4.ip_forward=1 > /dev/null 2>&1
 
 #get gateway and ip pool
 gw_IPsec=`ip route show | grep '^default' | sed -e 's/.* dev \([^ ]*\).*/\1/'`
-IP_pool_IPSec=`sed -n 's/^[ /t]*rightsourceip.*=[ /t]*//p' /etc/ipsec.conf`
+IP_pool_IPSec=`sed -n 's/^[ \t]*rightsourceip.*=[ \t]*//p' /etc/ipsec.conf`
 
 # turn on NAT over default gateway and VPN
 if !(iptables-save -t nat | grep -q "$gw_IPsec (IPSecIKEv1v2_1)"); then
