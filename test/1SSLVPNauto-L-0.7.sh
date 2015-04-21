@@ -681,13 +681,13 @@ function set_ocserv_conf(){
     sed -i "s|^[# \t]*\(compression = \).*|\1true|" /etc/ocserv/ocserv.conf
     sed -i 's|^[# \t]*\(dh-params = \).*|\1/etc/ocserv/dh.pem|' /etc/ocserv/ocserv.conf
 #2-group 增加组 bug 证书登录无法正常使用Default组
-#    two_group_set
+    [ "$open_two_group" = "y" ] && two_group_set
     echo "route = 0.0.0.0/128.0.0.0" > /etc/ocserv/defaults/group.conf
     echo "route = 128.0.0.0/128.0.0.0" >> /etc/ocserv/defaults/group.conf
     echo "route = 0.0.0.0/128.0.0.0" > /etc/ocserv/config-per-group/All
     echo "route = 128.0.0.0/128.0.0.0" >> /etc/ocserv/config-per-group/All
 #boot from the start 开机自启
-    [ "$ocserv_boot_start" = "y" ] && sudo insserv ocserv
+    [ "$ocserv_boot_start" = "y" ] && sudo insserv ocserv > /dev/null 2>&1
 #add a user 增加一个初始用户
     [ "$ca_login" = "n" ] && plain_login_set
 #set only tcp-port 仅仅使用tcp端口
@@ -713,7 +713,7 @@ function two_group_set(){
 }
 
 function plain_login_set(){
-#    group_name='-g "Route,All"'
+    [ "$open_two_group" = "y" ] && group_name='-g "Route,All"'
     (echo "$password"; sleep 1; echo "$password") | ocpasswd -c /etc/ocserv/ocpasswd $group_name $username
 }
 
@@ -971,6 +971,7 @@ CONFIG_PATH_VARS="/root/vars_ocservauto"
 OC_CONF_NET_DOC="https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto"
 #推荐的默认版本
 Default_oc_version="0.10.1"
+open_two_group="n"
 
 #Initialization step
 action=$1
