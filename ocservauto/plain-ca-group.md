@@ -12,7 +12,7 @@
 select-group = Client[route]
 default-select-group = all
 auto-select-group = false
-config-per-group = /etc/ocserv/config-per-group/
+config-per-group = /etc/ocserv/config-per-group
 ```
 
 需要注意的是，`select-group`这一项的值，Client是后面所讲的配置文件的`文件全名`，方括号里面的则是可以自定义的提示。
@@ -51,13 +51,16 @@ service ocserv restart
 
 ```
 cert-group-oid = 2.5.4.11
-select-group = Client[route]
+select-group = Client
 default-select-group = all
 auto-select-group = false
-config-per-group = /etc/ocserv/config-per-group/
+config-per-group = /etc/ocserv/config-per-group
 ```
 
 需要注意的是，`select-group` 这一行后面的值，是客户端证书的unit项目的值，方括号里面的则是可以自定义的提示。
+由于IOSanyconnect客户端可能将方括号的名字认为组名而进行验证，导致验证失败，所以如果验证失败请去掉方括号试试。
+如果同时开启密码验证和证书登录，导致只能使用密码验证，请关闭密码验证，只使用证书验证。
+
 
 然后，创建放置分流组配置文件的文件夹
 
