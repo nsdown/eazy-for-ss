@@ -9,18 +9,18 @@
 在ocserv.conf文件中取消相应行的注释，并且修改为如下值
 
 ```
-select-group = Client[route]
-default-select-group = all
+select-group = Route
+select-group = All
 auto-select-group = false
 config-per-group = /etc/ocserv/config-per-group
 ```
 
-需要注意的是，`select-group`这一项的值，Client是后面所讲的配置文件的`文件全名`，方括号里面的则是可以自定义的提示。
+需要注意的是，`select-group`这一项的值，是后面所讲的配置文件的`文件全名`。
 
-修改或者创建Client组的用户，下面的username是自定义的用户名
+修改或者创建组用户，下面的username是自定义的用户名
 
 ```shell
-ocpasswd -c /etc/ocserv/ocpasswd  -g "Client" username
+ocpasswd -c /etc/ocserv/ocpasswd  -g "Route，All" username
 ```
 
 然后，创建放置分流组配置文件的文件夹
@@ -29,15 +29,21 @@ ocpasswd -c /etc/ocserv/ocpasswd  -g "Client" username
 mkdir /etc/ocserv/config-per-group
 ```
 
-写入国内外分流路由规则（规则可以自定，只要写入/etc/ocserv/config-per-group/Client 文件中即可）
+写入国内外分流路由规则（规则可以自定，只要写入/etc/ocserv/config-per-group/Route 文件中即可）
 
 我们可以参考来自 https://github.com/humiaozuzu/ocserv-build 的一份优化好的路由表来完成分流，可以通过下面命令来配置
 
 ```shell
-wget https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/routerulers -O /etc/ocserv/config-per-group/Client
+wget https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/routerulers -O /etc/ocserv/config-per-group/Route
 ```
 
-重启ocserv即可
+然后创建一个空的All文件
+
+```
+touch /etc/ocserv/config-per-group/All
+```
+
+最后重启ocserv即可
 
 ```shell
 service ocserv restart
@@ -46,42 +52,5 @@ service ocserv restart
 ====
 
 ###证书方式分组
+default-select-group = all 默认组的配置，无法载入，测试失败。
 
-在ocserv.conf文件中取消相应行的注释，并且修改为如下值
-
-```
-cert-group-oid = 2.5.4.11
-select-group = Client
-default-select-group = all
-auto-select-group = false
-config-per-group = /etc/ocserv/config-per-group
-```
-
-需要注意的是，`select-group` 这一行后面的值，是客户端证书的unit项目的值，方括号里面的则是可以自定义的提示。
-由于IOSanyconnect客户端可能将方括号的名字认为组名而进行验证，导致验证失败，所以如果验证失败请去掉方括号试试。
-如果同时开启密码验证和证书登录，导致只能使用密码验证，请关闭密码验证，只使用证书验证。
-
-
-然后，创建放置分流组配置文件的文件夹
-
-```shell
-mkdir /etc/ocserv/config-per-group
-```
-
-写入国内外分流路由规则（规则可以自定，只要写入/etc/ocserv/config-per-group/Client 文件中即可）
-
-我们可以参考来自 https://github.com/humiaozuzu/ocserv-build 的一份优化好的路由表来完成分流，可以通过下面命令来配置
-
-```shell
-wget https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto/routerulers -O /etc/ocserv/config-per-group/Client
-```
-
-重启ocserv即可
-
-```shell
-service ocserv restart
-```
-
-需要注意的是，安卓anyconnect客户端证书分组可能会出现只走全局的BUG。
-
-====
