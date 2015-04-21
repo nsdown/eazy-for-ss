@@ -6,6 +6,7 @@
 #   Ocservauto For Debian Copyright (C) liyangyijie released under GNU GPLv2
 #   Ocservauto For Debian Is Based On SSLVPNauto v0.1-A1
 #   SSLVPNauto v0.1-A1 For Debian Copyright (C) Alex Fang frjalex@gmail.com released under GNU GPLv2
+#   Date: 2015-04-22 
 #   Thanks For
 #   http://www.infradead.org/ocserv/
 #   https://www.stunnel.info  Travis Lee
@@ -216,29 +217,15 @@ function check_Required(){
         then
             die "Your system is debian $oc_D_V. Only for Debian 7+"
         fi
-        oc_D_V="debian_wheezy"
+        oc_D_V="debian_sys"
+        print_info "Debian version ok"
     else
         print_info "Only test ubuntu 14.04"
         oc_D_V="$(cat /etc/debian_version)"
     fi
-    print_info "Debian version ok"
 #check install 防止重复安装
-    if [ -f /usr/sbin/ocserv ]
-    then
-        die "Ocserv has been installed!!!"
-    fi
+    [ -f /usr/sbin/ocserv ] && die "Ocserv has been installed!!!"
     print_info "Not installed ok"
-#get IPv4 info,install base-tools 
-    print_info "Getting ip and base-tools from net......"
-    apt-get update  -qq
-    apt-get install -qq -y vim sudo gawk curl nano sed insserv dnsutils
-    insserv -s  > /dev/null 2>&1
-    [ $? -eq 0 ] || sudo ln -s /usr/lib/insserv/insserv /sbin/insserv
-    ocserv_hostname=$(wget -qO- ipv4.icanhazip.com)
-    if [ $? -ne 0 -o -z $ocserv_hostname ]; then
-        ocserv_hostname=`dig +short +tcp myip.opendns.com @resolver1.opendns.com`
-    fi
-    print_info "Get ip and base-tools ok"
 #sources check,del test sources 去掉测试源 
     cat /etc/apt/sources.list | grep -v '^#' | grep 'wheezy-backports' > /dev/null 2>&1
     if [ $? -ne 0 ]; then
@@ -247,11 +234,25 @@ function check_Required(){
         sed -i '/wheezy-backports/d' /etc/apt/sources.list
     fi
     print_info "Sources ok"
-#get profiles from net 从网络中获取配置
-    print_info "Getting default profiles from net......"
-    OC_version_latest=$(curl -s "http://www.infradead.org/ocserv/download.html" | sed -n 's/^.*version is <b>\(.*$\)/\1/p')
-    print_info "Get profiles ok"
+#install base-tools 
+    print_info "Installing base-tools......"
+    apt-get update  -qq
+    apt-get install -qq -y vim sudo gawk curl nano sed insserv dnsutils
+    insserv -s  > /dev/null 2>&1 || sudo ln -s /usr/lib/insserv/insserv /sbin/insserv
+    print_info "Get base-tools ok"
+#get info from net 从网络中获取信息
+    print_info "Getting info from net......"
+    get_info_from_net
+    print_info "Get info ok"
     clear
+}
+
+function get_info_from_net(){
+    ocserv_hostname=$(wget -qO- ipv4.icanhazip.com)
+    if [ $? -ne 0 -o -z $ocserv_hostname ]; then
+        ocserv_hostname=`dig +short +tcp myip.opendns.com @resolver1.opendns.com`
+    fi
+    OC_version_latest=$(curl -s "http://www.infradead.org/ocserv/download.html" | sed -n 's/^.*version is <b>\(.*$\)/\1/p')
 }
 
 function get_Custom_configuration(){
@@ -309,7 +310,7 @@ function add_a_user(){
 function Dependencies_install_onebyone(){
     for OC_DP in $oc_dependencies
     do
-        print_info "Installing the $OC_DP "
+        print_info "Installing $OC_DP "
         DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $TEST_S $OC_DP
         if [ $? -eq 0 ]; then
             print_info "[$OC_DP] ok!"
@@ -331,8 +332,7 @@ function tar_lz4_install(){
     tar -xf lz4.tar.gz -C lz4 --strip-components=1 
     rm lz4.tar.gz 
     cd lz4 
-    make -j"$(nproc)" 
-    make install
+    make -j"$(nproc)" && make install
     cd ..
     rm -r lz4
     if [ `getconf WORD_BIT` = '32' ] && [ `getconf LONG_BIT` = '64' ]; then
@@ -372,8 +372,6 @@ Package: *
 Pin: release wheezy-backports
 Pin-Priority: 90
 Package: *
-Pin: release jessie
-Pin-Priority: 60
 EOF
     cat > /etc/apt/apt.conf.d/77ocserv<<'EOF'
 APT::Install-Recommends "false";
@@ -388,22 +386,24 @@ EOF
     Dependencies_install_onebyone
 #add test source 
     echo "deb http://ftp.debian.org/debian wheezy-backports main contrib non-free" >> /etc/apt/sources.list
-    apt-get update
 #install dependencies from wheezy-backports
-    oc_dependencies="libgnutls28-dev libseccomp-dev" && TEST_S="-t wheezy-backports -f --force-yes"
-    [ "$oc_D_V" = "jessie/sid" ] || Dependencies_install_onebyone
+    [ "$oc_D_V" = "jessie/sid" ] || {
+        oc_dependencies="libgnutls28-dev libseccomp-dev" && TEST_S="-t wheezy-backports -f --force-yes"
+        apt-get update
+        Dependencies_install_onebyone
+    }
 #install freeradius-client-1.1.7
     tar_freeradius_client_install
 #install dependencies lz4  增加lz4压缩必须包
-#   oc_dependencies="libprotobuf-c-dev libhttp-parser-dev liblz4-dev"
+#libprotobuf-c-dev libhttp-parser-dev
 #lz4
-        tar_lz4_install
+    tar_lz4_install
 #if sources del 如果本来没有测试源便删除
     [ "$oc_wheezy_backports" = "n" ] && sed -i '/wheezy-backports/d' /etc/apt/sources.list
 #keep update
     rm -f /etc/apt/preferences.d/my_ocserv_preferences
     rm -f /etc/apt/apt.conf.d/77ocserv
-    apt-get update
+    [ "$oc_D_V" = "jessie/sid" ] || apt-get update
     print_info "Dependencies  ok"
 }
 
@@ -424,10 +424,7 @@ function tar_ocserv_install(){
     make -j"$(nproc)" 2>>/root/ocerror.log
     make install
 #check install 检测编译安装是否成功
-    if [ ! -f /usr/sbin/ocserv ]
-    then
-        die "Ocserv install failure,check dependencies!"
-    fi
+    [ ! -f /usr/sbin/ocserv ] && die "Ocserv install failure,check /root/ocerror.log"
 #mv files
     rm -f /root/ocerror.log
     mkdir -p /etc/ocserv/CAforOC/revoke
@@ -574,8 +571,8 @@ EOF
     while [ ! -f ocserv.conf ]; do
         wget -c $OC_CONF_NET_DOC/ocserv.conf --no-check-certificate
     done
-    while [ ! -f config-per-group/Client ]; do
-        wget -c $OC_CONF_NET_DOC/routerulers -O config-per-group/Client --no-check-certificate
+    while [ ! -f config-per-group/Route ]; do
+        wget -c $OC_CONF_NET_DOC/routerulers -O config-per-group/Route --no-check-certificate
     done
     if [ ! -f dh.pem ]; then
         print_info "Perhaps generate DH parameters will take some time , please wait..."
@@ -621,9 +618,8 @@ encryption_key
 tls_www_server
 _EOF_
     certtool --generate-certificate --load-privkey server-key.pem --load-ca-certificate ca-cert.pem --load-ca-privkey ca-key.pem --template server.tmpl --outfile server-cert.pem
-    if [ ! -f server-cert.pem ] || [ ! -f server-key.pem ]; then	
-        die "server-cert.pem or server-key.pem NOT Found , make failure!"
-    fi
+    [ ! -f server-cert.pem ] && die "server-cert.pem NOT Found , make failure!"
+    [ ! -f server-key.pem ] && die "server-key.pem NOT Found , make failure!"
     cp server-cert.pem /etc/ocserv && cp server-key.pem /etc/ocserv
     cp ca-cert.pem /etc/ocserv
     print_info "Self-signed CA for ocserv ok"
@@ -644,8 +640,8 @@ function ca_login_ocserv(){
     mkdir user-${name_user_ca}
     oc_ex_days=${oc_ex_days:-7777}
     cat << _EOF_ > user-${name_user_ca}/user.tmpl
-cn = "Client-${name_user_ca}"
-unit = "Client"
+cn = "user-${name_user_ca}"
+unit = "Route"
 expiration_days = ${oc_ex_days}
 signing_key
 tls_www_client
@@ -655,7 +651,7 @@ _EOF_
 #user cert
     certtool --generate-certificate --load-privkey user-${name_user_ca}/user-${name_user_ca}-key.pem --load-ca-certificate ca-cert.pem --load-ca-privkey ca-key.pem --template user-${name_user_ca}/user.tmpl --outfile user-${name_user_ca}/user-${name_user_ca}-cert.pem
 #p12
-    openssl pkcs12 -export -inkey user-${name_user_ca}/user-${name_user_ca}-key.pem -in user-${name_user_ca}/user-${name_user_ca}-cert.pem -name "Client ${name_user_ca}" -certfile ca-cert.pem -caname "$caname" -out user-${name_user_ca}/user-${name_user_ca}.p12 -passout pass:$password
+    openssl pkcs12 -export -inkey user-${name_user_ca}/user-${name_user_ca}-key.pem -in user-${name_user_ca}/user-${name_user_ca}-cert.pem -name "user-${name_user_ca}" -certfile ca-cert.pem -caname "$caname" -out user-${name_user_ca}/user-${name_user_ca}.p12 -passout pass:$password
 #cp to root
     cp user-${name_user_ca}/user-${name_user_ca}.p12 /root
 #make a empty revocation list
@@ -685,10 +681,7 @@ function set_ocserv_conf(){
     sed -i "s|^[# \t]*\(compression = \).*|\1true|" /etc/ocserv/ocserv.conf
     sed -i 's|^[# \t]*\(dh-params = \).*|\1/etc/ocserv/dh.pem|' /etc/ocserv/ocserv.conf
 #2-group
-    sed -i 's|^[# \t]*\(select-group = \)group1.*|\1Client\[Route\]|' /etc/ocserv/ocserv.conf
-    sed -i 's|^[# \t]*\(default-select-group = \).*|\1All|' /etc/ocserv/ocserv.conf
-    sed -i 's|^[# \t]*\(auto-select-group = \).*|\1false|' /etc/ocserv/ocserv.conf
-    sed -i 's|^[# \t]*\(config-per-group = \).*|\1/etc/ocserv/config-per-group/|' /etc/ocserv/ocserv.conf
+    two_group_set
 #boot from the start 开机自启
     [ "$ocserv_boot_start" = "y" ] && sudo insserv ocserv
 #add a user 增加一个初始用户
@@ -706,8 +699,15 @@ function set_ocserv_conf(){
     print_info "Set ocserv ok"
 }
 
+function two_group_set(){
+    sed -i 's|^[# \t]*\(select-group = \)group1.*|\1Route|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# \t]*\(default-select-group = \).*|\1All|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# \t]*\(auto-select-group = \).*|\1false|' /etc/ocserv/ocserv.conf
+    sed -i 's|^[# \t]*\(config-per-group = \).*|\1/etc/ocserv/config-per-group|' /etc/ocserv/ocserv.conf
+}
+
 function plain_login_set(){
-    (echo "$password"; sleep 1; echo "$password") | ocpasswd "-c /etc/ocserv/ocpasswd"  -g "Client" $username
+    (echo "$password"; sleep 1; echo "$password") | ocpasswd "-c /etc/ocserv/ocpasswd"  -g "Route" $username
 }
 
 function ca_login_set(){
@@ -733,17 +733,16 @@ function stop_ocserv(){
 }
 
 function start_ocserv(){
-    if [ ! -f /etc/ocserv/server-cert.pem ] || [ ! -f /etc/ocserv/server-key.pem ]; then
-        die "server-cert.pem or server-key.pem NOT Found !!!"
-    fi
+    [ ! -f /etc/ocserv/server-cert.pem ] && die "server-cert.pem NOT Found !!!"
+    [ ! -f /etc/ocserv/server-key.pem ] && die "server-key.pem NOT Found !!!"
 #start
     /etc/init.d/ocserv start
 }
 
 function show_ocserv(){
-    ocserv_port=`cat /etc/ocserv/ocserv.conf | grep '^tcp-port' | sed 's/tcp-port = //g'`
+    ocserv_port=`sed -n 's/^[ \t]*tcp-port[ \t]*=[ \t]*//p' /etc/ocserv/ocserv.conf`
     clear
-    ps -ef | grep -v grep | grep -v ps | grep -i '/usr/sbin/ocserv' > /dev/null 2>&1
+    ps cax | grep ocserv > /dev/null 2>&1
     if [ $? -eq 0 ]; then
         if [ "$ca_login" = "y" ]; then
             echo ""
@@ -785,15 +784,18 @@ function show_ocserv(){
         print_warn "6,You could start ocserv by ' /etc/init.d/ocserv start '!"
         print_warn "7,Boot from the start or not, use ' sudo insserv ocserv ' or ' sudo insserv -r ocserv '."
     else
-        print_warn "Ocserv start failure,ocserv is offline!"	
+        print_warn "Ocserv start failure,ocserv is offline!"
     fi
 }
 
-function get_new_userca(){
+function check_ca_cert(){
     [ ! -f /usr/sbin/ocserv ] && die "Ocserv NOT Found !!!"
-    if [ ! -f /etc/ocserv/CAforOC/ca-cert.pem ] || [ ! -f /etc/ocserv/CAforOC/ca-key.pem ]; then
-        die "ca-cert.pem or ca-key.pem NOT Found !!!"
-    fi
+    [ ! -f /etc/ocserv/CAforOC/ca-cert.pem ] && die "ca-cert.pem NOT Found !!!"
+    [ ! -f /etc/ocserv/CAforOC/ca-key.pem ] && die "ca-key.pem NOT Found !!!"
+}
+
+function get_new_userca(){
+    check_ca_cert
     ca_login="y"
     self_signed_ca="y"
     add_a_user
@@ -826,10 +828,7 @@ function Outdate_Autoclean(){
 }
 
 function revoke_userca(){
-    [ ! -f /usr/sbin/ocserv ] && die "Ocserv NOT Found !!!"
-    if [ ! -f /etc/ocserv/CAforOC/ca-cert.pem ] || [ ! -f /etc/ocserv/CAforOC/ca-key.pem ]; then
-        die "ca-key.pem or ca-cert.pem NOT Found !!!"
-    fi
+    check_ca_cert
 #get info
     cd /etc/ocserv/CAforOC
     Outdate_Autoclean
@@ -869,7 +868,7 @@ function reinstall_ocserv(){
 }
 
 function upgrade_ocserv(){    
-    OC_version_latest=$(curl -s "http://www.infradead.org/ocserv/download.html" | sed -n 's/^.*version is <b>\(.*$\)/\1/p')
+    get_info_from_net
     Default_Ask "The latest is ${OC_version_latest}.Input the version you want to upgrade?" "$OC_version_latest" "oc_version"
     Default_Ask "The maximum number of routing table rules?" "200" "max_router"
     press_any_key
@@ -879,7 +878,7 @@ function upgrade_ocserv(){
     rm -f /usr/sbin/ocserv
     tar_ocserv_install
     start_ocserv
-    ps -ef | grep -v grep | grep -v ps | grep -i '/usr/sbin/ocserv' > /dev/null 2>&1
+    ps cax | grep ocserv > /dev/null 2>&1
     if [ $? -eq 0 ]; then
     print_info "Your ocserv upgrade was successful!"
     else
@@ -961,7 +960,7 @@ echo "==========================================================================
 
 #fastmode vars 存放配置参数文件的绝对路径，快速安装模式可用
 CONFIG_PATH_VARS="/root/vars_ocservauto"
-#ocserv配置文件所在的网络文件夹位置
+#ocserv配置文件所在的网络文件夹位置，请勿轻易改变
 OC_CONF_NET_DOC="https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto"
 #推荐的默认版本
 Default_oc_version="0.10.1"
