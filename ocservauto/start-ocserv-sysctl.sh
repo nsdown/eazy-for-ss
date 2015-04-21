@@ -9,9 +9,9 @@ sysctl -w net.ipv4.ip_forward=1 > /dev/null 2>&1
 
 #get gateway and profiles
 gw_intf_oc=`ip route show|sed -n 's/^default.* dev \([^ ]*\).*/\1/p'`
-ocserv_tcpport=`sed -n 's/^tcp-.*=[ /t]*//p' $OCSERV_CONFIG`
-ocserv_udpport=`sed -n 's/^udp-.*=[ /t]*//p' $OCSERV_CONFIG`
-ocserv_ip4_work_mask=`sed -n 's/^ipv4-.*=[ /t]*//p' $OCSERV_CONFIG|sed 'N;s|\n|/|g'`
+ocserv_tcpport=`sed -n 's/^tcp-.*=[ \t]*//p' $OCSERV_CONFIG`
+ocserv_udpport=`sed -n 's/^udp-.*=[ \t]*//p' $OCSERV_CONFIG`
+ocserv_ip4_work_mask=`sed -n 's/^ipv4-.*=[ \t]*//p' $OCSERV_CONFIG|sed 'N;s|\n|/|g'`
 
 
 # turn on NAT over default gateway and VPN
