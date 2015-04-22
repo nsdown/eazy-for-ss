@@ -33,10 +33,14 @@ if [ "$ocserv_udpport" != "" ]; then
     fi
 fi
 
+if !(iptables-save -t filter | grep -q "$gw_intf_oc (ocserv5)"); then
+iptables -A FORWARD  -m state --state RELATED,ESTABLISHED -m comment --comment "$gw_intf_oc (ocserv5)" -j ACCEPT
+fi
+
 # turn on MSS fix
 # MSS = MTU - TCP header - IP header
-if !(iptables-save -t mangle | grep -q "$gw_intf_oc (ocserv5)"); then
-iptables -t mangle -A FORWARD -p tcp -m tcp --tcp-flags SYN,RST SYN -m comment --comment "$gw_intf_oc (ocserv5)" -j TCPMSS --clamp-mss-to-pmtu
+if !(iptables-save -t mangle | grep -q "$gw_intf_oc (ocserv6)"); then
+iptables -t mangle -A FORWARD -p tcp -m tcp --tcp-flags SYN,RST SYN -m comment --comment "$gw_intf_oc (ocserv6)" -j TCPMSS --clamp-mss-to-pmtu
 fi
 
 echo "..."
