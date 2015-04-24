@@ -3,7 +3,7 @@
 FILE_NAME=""
 EMAIL_AD=""
 API_KEY=""
-
+DOMAIN=""
 
 FILE_BASE64=`base64 ${FILE_NAME}`
 USER_NAME=`echo ${EMAIL_AD}|cut -d@ -f1`
@@ -14,6 +14,7 @@ cat > my.json<<EOF
     "message": {
         "html": "${HTML}",
         "subject": "Ocserv-Clientcert",
+        "from_email": "no-reply@${DOMAIN}",
         "from_name": "Ocserv",
         "to": [
             {
