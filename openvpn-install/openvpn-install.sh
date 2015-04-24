@@ -44,6 +44,10 @@ newclient () {
 	sed -i "/ca ca.crt/d" ~/$1.ovpn
 	sed -i "/cert client.crt/d" ~/$1.ovpn
 	sed -i "/key client.key/d" ~/$1.ovpn
+	echo "key-direction 1" >> ~/$1.ovpn
+	echo "<tls-auth>" >> ~/$1.ovpn
+	cat /etc/openvpn/ta.key >> ~/$1.ovpn
+	echo "</tls-auth>" >> ~/$1.ovpn
 	echo "<ca>" >> ~/$1.ovpn
 	cat /etc/openvpn/easy-rsa/2.0/keys/ca.crt >> ~/$1.ovpn
 	echo "</ca>" >> ~/$1.ovpn
@@ -230,9 +234,12 @@ else
 	cp ca.crt ca.key dh2048.pem server.crt server.key /etc/openvpn
 	cd /etc/openvpn/
 	# Set the server configuration
+	openvpn --genkey --secret ta.key
 	sed -i 's|dh dh1024.pem|dh dh2048.pem|' server.conf
 	sed -i 's|;push "redirect-gateway def1 bypass-dhcp"|push "redirect-gateway def1 bypass-dhcp"|' server.conf
 	sed -i "s|port 1194|port $PORT|" server.conf
+	sed -i 's|;tls-auth|tls-auth|' server.conf
+	sed -i 's|;cipher AES-128-CBC|cipher AES-128-CBC|' server.conf
 	#允许同账号异地登录及网络优化
 	sed -i 's|;duplicate-cn|duplicate-cn|' server.conf
 	cat << _EOF_ >> server.conf
