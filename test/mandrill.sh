@@ -1,21 +1,28 @@
 #!/bin/bash
 #mandrill api curl
-FILE_NAME=""
-EMAIL_AD=""
+
 API_KEY=""
 DOMAIN=""
 
+
+FILE_NAME="$1"
+EMAIL_AD="$2"
+FROM_NAME="Ocserv"
+SUBJECT="Ocserv-Clientcert"
+MIME_TYPE="application/x-pkcs12"
+#MIME_TYPE="text/plain"
+#MIME_TYPE="application/x-openvpn-profile"
 FILE_BASE64=`base64 ${FILE_NAME}`
 USER_NAME=`echo ${EMAIL_AD}|cut -d@ -f1`
-HTML="<p>您好！</p><br /><p>您所收到的邮件是ocserv为您生成的证书文件的通知。</p><p><b>${FILE_NAME}</b>文件是为您生成的身份证书，用于您在使用ocserv服务时，提供给服务器的身份凭据。</p><br /><p><i>请将上面的证书导入您的终端。</i></p><br /><br /><p><b>请不要回复此邮件，谢谢!</b><p>"
-cat > my.json<<EOF
+HTML="<p>${USER_NAME}您好！</p><br /><p>${FROM_NAME}为您生成了一份证书文件。</p><p><b>附件当中的${FILE_NAME}</b>文件是为您生成的身份证书，用于您在使用服务时，提供给服务器的身份凭据。</p><br /><p><i>请将上面的证书导入您的终端。</i></p><br /><br /><p><b>请不要回复此邮件，谢谢!</b><p>"
+cat > ${USER_NAME}.json<<EOF
 {
     "key": "${API_KEY}",
     "message": {
         "html": "${HTML}",
-        "subject": "Ocserv-Clientcert",
+        "subject": "${SUBJECT}",
         "from_email": "no-reply@${DOMAIN}",
-        "from_name": "Ocserv",
+        "from_name": "${FROM_NAME}",
         "to": [
             {
                 "email": "${EMAIL_AD}",
@@ -29,7 +36,7 @@ cat > my.json<<EOF
         "merge": true,
         "attachments": [
             {
-                "type": "application/x-pkcs12",
+                "type": "${MIME_TYPE}",
                 "name": "${FILE_NAME}",
                 "content": "${FILE_BASE64}"
             }
@@ -39,4 +46,6 @@ cat > my.json<<EOF
 }
 EOF
 
-curl -X POST -H "Content-Type: application/json" --data @my.json https://mandrillapp.com/api/1.0/messages/send.json -v
+curl -X POST -H "Content-Type: application/json" --data @${USER_NAME}.json https://mandrillapp.com/api/1.0/messages/send.json -v
+
+#rm -f ${USER_NAME}.json
