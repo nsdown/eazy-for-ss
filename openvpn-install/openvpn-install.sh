@@ -44,6 +44,7 @@ newclient () {
 	sed -i "/ca ca.crt/d" ~/$1.ovpn
 	sed -i "/cert client.crt/d" ~/$1.ovpn
 	sed -i "/key client.key/d" ~/$1.ovpn
+	sed -i 's|;cipher.*|cipher AES-128-CBC|' ~/$1.ovpn
 	echo "key-direction 1" >> ~/$1.ovpn
 	echo "<tls-auth>" >> ~/$1.ovpn
 	cat /etc/openvpn/ta.key >> ~/$1.ovpn
