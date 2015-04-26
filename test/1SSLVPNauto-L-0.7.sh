@@ -250,8 +250,12 @@ function get_info_from_net(){
 }
 
 function get_Custom_configuration(){
-#whether to make a Self-signed CA 是否需要制作自签名证书
-    fast_Default_Ask "Make a Self-signed CA for your server?(y/n)" "y" "self_signed_ca"
+#Which ocserv version to install 安装哪个版本的ocserv
+    fast_Default_Ask "$OC_version_latest is the latest,but default version is recommended.Which to choose?" "$Default_oc_version" "oc_version"
+#whether to use the certificate login 是否证书登录,默认为用户名密码登录
+    fast_Default_Ask "Whether to choose the certificate login?(y/n)" "n" "ca_login"
+#whether to generate a Self-signed CA 是否需要制作自签名证书
+    fast_Default_Ask "Generate a Self-signed CA for your server?(y/n)" "y" "self_signed_ca"
     if [ "$self_signed_ca" = "n" ]; then
         Default_Ask "Input your own domain for ocserv." "$ocserv_hostname" "fqdnname"
     else 
@@ -262,7 +266,7 @@ function get_Custom_configuration(){
 #get Company name
         fast_Default_Ask "Your Company name?" "ocvpn" "coname"
 #get server's FQDN
-        Default_Ask "Your server's FQDN?" "$ocserv_hostname" "fqdnname"
+        Default_Ask "Your server's domain?" "$ocserv_hostname" "fqdnname"
     fi
 #set max router rulers 最大路由规则限制数目
     fast_Default_Ask "The maximum number of routing table rules?" "200" "max_router"
@@ -276,10 +280,6 @@ function get_Custom_configuration(){
     fi
 #boot from the start 是否开机自起
     fast_Default_Ask "Start ocserv when system is started?(y/n)" "y" "ocserv_boot_start"
-#whether to use the certificate login 是否证书登录或者用户名密码登录
-    fast_Default_Ask "Whether to choose the certificate login?(y/n)" "n" "ca_login"
-#Which ocserv version to install 安装哪个版本的ocserv
-    fast_Default_Ask "$OC_version_latest is the latest,but default version is recommended.Which to choose?" "$Default_oc_version" "oc_version"
 #Save user vars or not 是否保存脚本参数 以便于下次快速配置
     fast_Default_Ask "Save the vars for fast mode or not?" "n" "save_user_vars"
 }
@@ -375,7 +375,7 @@ APT::Get::Install-Recommends "false";
 APT::Get::Install-Suggests "false";
 EOF
 #sources check @ check Required 源检测在前面 for ubuntu+3
-    [ "$oc_D_V" = "jessie" ] && oc_u_dependencies="libgnutls28-dev libseccomp-dev"
+    [ "$oc_D_V" = "jessie" ] && oc_u_dependencies="libgnutls28-dev libseccomp-dev libhttp-parser-dev"
     oc_dependencies="build-essential pkg-config make gcc m4 gnutls-bin libgmp3-dev libwrap0-dev libpam0g-dev libdbus-1-dev libnl-route-3-dev libopts25-dev libnl-nf-3-dev libreadline-dev libpcl1-dev autogen libtalloc-dev $oc_u_dependencies"
     TEST_S=""
     Dependencies_install_onebyone
