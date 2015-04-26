@@ -198,36 +198,29 @@ function install_OpenConnect_VPN_server(){
 
 function check_Required(){
 #check root
-    if [ $(/usr/bin/id -u) != "0" ]
-    then
-        die 'Must be run by root user'
-    fi
+    [ $EUID -ne 0 ] && die 'Must be run by root user.'
     print_info "Root ok"
-#debian only
-    if [ ! -f /etc/debian_version ]
-    then
-        die "Looks like you aren't running this installer on a Debian-based system"
-    fi
-    print_info "Debian ok"
+#debian-based only
+    [ ! -f /etc/debian_version ] && die "Must be run on a Debian-based system."
+    print_info "Debian-based ok"
+#tun/tap
+    [ ! -e /dev/net/tun ] && die "TUN/TAP is not available."
 #only Debian 7+
-    expr $(cat /etc/debian_version | cut -d. -f1) + 0 > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
+    cat /etc/issue|grep -i 'debian' && {
         oc_D_V=`expr $(cat /etc/debian_version | cut -d. -f1)`
-        if [ $oc_D_V -lt 7 ]
-        then
-            die "Your system is debian $oc_D_V. Only for Debian 7+"
-        fi
+        [ $oc_D_V -lt 7 ] && die "Your system is debian $oc_D_V. Only for Debian 7+."
         oc_D_V="debian_sys"
         print_info "Debian version ok"
-    else
-        print_info "Only test ubuntu 14.04"
+    }
+    cat /etc/issue|grep -i 'debian' || {
+        print_info "Only test on ubuntu 14.04"
         oc_D_V="$(cat /etc/debian_version)"
-    fi
+    }
 #check install 防止重复安装
-    [ -f /usr/sbin/ocserv ] && die "Ocserv has been installed!!!"
+    [ -f /usr/sbin/ocserv ] && die "Ocserv has been installed."
     print_info "Not installed ok"
 #sources check,del test sources 去掉测试源 
-    cat /etc/apt/sources.list | grep -v '^#' | grep 'wheezy-backports' > /dev/null 2>&1
+    sed 's/^[ \t]*//' /etc/apt/sources.list | grep -v '^#' | grep 'wheezy-backports' > /dev/null 2>&1
     if [ $? -ne 0 ]; then
         oc_wheezy_backports="n"
      else
@@ -526,7 +519,6 @@ gw_intf_oc=`ip route show|sed -n 's/^default.* dev \([^ ]*\).*/\1/p'`
 ocserv_tcpport=`sed -n 's/^tcp-.*=[ \t]*//p' $OCSERV_CONFIG`
 ocserv_udpport=`sed -n 's/^udp-.*=[ \t]*//p' $OCSERV_CONFIG`
 ocserv_ip4_work_mask=`sed -n 's/^ipv4-.*=[ \t]*//p' $OCSERV_CONFIG|sed 'N;s|\n|/|g'`
-
 
 # turn on NAT over default gateway and VPN
 if !(iptables-save -t nat | grep -q "$gw_intf_oc (ocserv)"); then
@@ -975,7 +967,7 @@ CONFIG_PATH_VARS="/root/vars_ocservauto"
 #ocserv配置文件所在的网络文件夹位置，请勿轻易改变
 OC_CONF_NET_DOC="https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto"
 #推荐的默认版本
-Default_oc_version="0.10.1"
+Default_oc_version="0.10.2"
 open_two_group="n"
 
 #Initialization step
