@@ -375,14 +375,14 @@ APT::Get::Install-Recommends "false";
 APT::Get::Install-Suggests "false";
 EOF
 #sources check @ check Required 源检测在前面 for ubuntu+3
-    [ "$oc_D_V" = "jessie" ] && oc_u_dependencies="libgnutls28-dev libseccomp-dev libhttp-parser-dev"
+    [ "$oc_D_V" = "wheezy" ] || oc_u_dependencies="libgnutls28-dev libseccomp-dev libhttp-parser-dev"
     oc_dependencies="build-essential pkg-config make gcc m4 gnutls-bin libgmp3-dev libwrap0-dev libpam0g-dev libdbus-1-dev libnl-route-3-dev libopts25-dev libnl-nf-3-dev libreadline-dev libpcl1-dev autogen libtalloc-dev $oc_u_dependencies"
     TEST_S=""
     Dependencies_install_onebyone
 #add test source 
     echo "deb http://ftp.debian.org/debian wheezy-backports main contrib non-free" >> /etc/apt/sources.list
 #install dependencies from wheezy-backports
-    [ "$oc_D_V" = "jessie" ] || {
+    [ "$oc_D_V" = "wheezy" ] && {
         oc_dependencies="libgnutls28-dev libseccomp-dev" && TEST_S="-t wheezy-backports -f --force-yes"
         apt-get update
         Dependencies_install_onebyone
@@ -398,7 +398,7 @@ EOF
 #keep update
     rm -f /etc/apt/preferences.d/my_ocserv_preferences
     rm -f /etc/apt/apt.conf.d/77ocserv
-    [ "$oc_D_V" = "jessie" ] || apt-get update
+    [ "$oc_D_V" = "wheezy" ] && apt-get update
     print_info "Dependencies  ok"
 }
 
