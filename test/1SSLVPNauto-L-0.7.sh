@@ -943,7 +943,7 @@ function help_ocservauto(){
     echo
     print_info " upgrade or ug ----------------- Smooth upgrade your ocserv"
     echo
-    print_info " reinstall or ri --------------- Force to reinstall your ocserv"
+    print_info " reinstall or ri --------------- Force to reinstall your ocserv(Destroy All Data)"
     echo
     print_info " pc ---------------------------- At the same time,enable the plain login and the certificate login"
     echo
