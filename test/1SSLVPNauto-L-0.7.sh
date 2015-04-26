@@ -421,7 +421,8 @@ function tar_ocserv_install(){
 #check install 检测编译安装是否成功
     [ ! -f /usr/sbin/ocserv ] && {
         make clean
-        die "Ocserv install failure,check /root/ocerror.log"}
+        die "Ocserv install failure,check /root/ocerror.log"
+    }
 #mv files
     rm -f /root/ocerror.log
     mkdir -p /etc/ocserv/CAforOC/revoke > /dev/null 2>&1
