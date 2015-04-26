@@ -209,12 +209,13 @@ function check_Required(){
     cat /etc/issue|grep -i 'debian' && {
         oc_D_V=`expr $(cat /etc/debian_version | cut -d. -f1)`
         [ $oc_D_V -lt 7 ] && die "Your system is debian $oc_D_V. Only for Debian 7+."
-        oc_D_V="debian_sys"
+        [ $oc_D_V -lt 8 ] && oc_D_V="wheezy"
+        [ $oc_D_V -lt 9 ] && oc_D_V="jessie"
         print_info "Debian version ok"
     }
     cat /etc/issue|grep -i 'debian' || {
         print_info "Only test on ubuntu 14.04"
-        oc_D_V="$(cat /etc/debian_version)"
+        oc_D_V="$(cat /etc/debian_version | cut -d/ -f1)"
     }
 #check install 防止重复安装
     [ -f /usr/sbin/ocserv ] && die "Ocserv has been installed."
@@ -354,6 +355,7 @@ function pre_install(){
 #keep kernel 防止某些情况下内核升级
     echo linux-image-`uname -r` hold | sudo dpkg --set-selections > /dev/null 2>&1
     apt-get upgrade -y
+    echo linux-image-`uname -r` install | sudo dpkg --set-selections > /dev/null 2>&1
 #no upgrade from test sources 不升级不安装测试源其他包
     [ ! -d /etc/apt/preferences.d ] && mkdir /etc/apt/preferences.d
     [ ! -d /etc/apt/apt.conf.d ] && mkdir /etc/apt/apt.conf.d
@@ -373,14 +375,14 @@ APT::Get::Install-Recommends "false";
 APT::Get::Install-Suggests "false";
 EOF
 #sources check @ check Required 源检测在前面 for ubuntu+3
-    [ "$oc_D_V" = "jessie/sid" ] && oc_u_dependencies="libgnutls28-dev libseccomp-dev"
+    [ "$oc_D_V" = "jessie" ] && oc_u_dependencies="libgnutls28-dev libseccomp-dev"
     oc_dependencies="build-essential pkg-config make gcc m4 gnutls-bin libgmp3-dev libwrap0-dev libpam0g-dev libdbus-1-dev libnl-route-3-dev libopts25-dev libnl-nf-3-dev libreadline-dev libpcl1-dev autogen libtalloc-dev $oc_u_dependencies"
     TEST_S=""
     Dependencies_install_onebyone
 #add test source 
     echo "deb http://ftp.debian.org/debian wheezy-backports main contrib non-free" >> /etc/apt/sources.list
 #install dependencies from wheezy-backports
-    [ "$oc_D_V" = "jessie/sid" ] || {
+    [ "$oc_D_V" = "jessie" ] || {
         oc_dependencies="libgnutls28-dev libseccomp-dev" && TEST_S="-t wheezy-backports -f --force-yes"
         apt-get update
         Dependencies_install_onebyone
@@ -396,7 +398,7 @@ EOF
 #keep update
     rm -f /etc/apt/preferences.d/my_ocserv_preferences
     rm -f /etc/apt/apt.conf.d/77ocserv
-    [ "$oc_D_V" = "jessie/sid" ] || apt-get update
+    [ "$oc_D_V" = "jessie" ] || apt-get update
     print_info "Dependencies  ok"
 }
 
@@ -413,11 +415,13 @@ function tar_ocserv_install(){
     cd ocserv-$oc_version
 #have to use "" then $ work ,set router limit 设定路由规则最大限制
     sed -i "s|\(#define MAX_CONFIG_ENTRIES \).*|\1$max_router|" src/vpn.h
-    ./configure --prefix=/usr --sysconfdir=/etc --with-local-talloc 2>/root/ocerror.log
+    ./configure --prefix=/usr --sysconfdir=/etc 2>/root/ocerror.log
     make -j"$(nproc)" 2>>/root/ocerror.log
     make install
 #check install 检测编译安装是否成功
-    [ ! -f /usr/sbin/ocserv ] && die "Ocserv install failure,check /root/ocerror.log"
+    [ ! -f /usr/sbin/ocserv ] && {
+        make clean
+        die "Ocserv install failure,check /root/ocerror.log"}
 #mv files
     rm -f /root/ocerror.log
     mkdir -p /etc/ocserv/CAforOC/revoke > /dev/null 2>&1
