@@ -131,9 +131,9 @@ sysctl -p /etc/sysctl.d/local_ss.conf
 #+source   
 sed 's/^[ \t]*//' /etc/apt/sources.list|grep -v '^#'|grep 'shadowsocks' > /dev/null 2>&1
 if [ $? -ne 0 ]; then
-    expr $(cat /etc/debian_version|cut -d. -f1|grep -v ^#) + 0 > /dev/null 2>&1
+    expr $(cat /etc/debian_version|cut -d. -f1) + 0 > /dev/null 2>&1
     if [ $? -eq 0 ]; then
-        D_V=`expr $(cat /etc/debian_version|cut -d. -f1|grep -v ^#)`
+        D_V=`expr $(cat /etc/debian_version|cut -d. -f1)`
         if [ $D_V -lt 7 ]; then        
             echo "deb http://shadowsocks.org/debian squeeze main" >> /etc/apt/sources.list
         else
@@ -149,14 +149,14 @@ clear
 }
 
 function Check_Tcp_Port(){
-    All_Listen_Tcp_Port=`netstat -napt|grep -i 'listen'|awk {'print $4'}|sed 's/.*:\(.*\)/\1/'|sort|uniq`
-    Port=""
-    for Port in $All_Listen_Tcp_Port
-    do
-        if [ "$1" = "$Port" ]; then
-            return 1
-        fi
-    done
+All_Listen_Tcp_Port=`netstat -napt|grep -i 'listen'|awk {'print $4'}|sed 's/.*:\(.*\)/\1/'|sort|uniq`
+Port=""
+for Port in $All_Listen_Tcp_Port
+do
+    if [ "$1" = "$Port" ]; then
+        return 1
+    fi
+done
 }
 
 function get_config(){
@@ -217,9 +217,7 @@ sed -i 's|\(MAXFD=\).*|\151200|' /etc/default/shadowsocks-libev
 
 function config_shadowsocks(){
 # set config 
-if [ ! -d /etc/shadowsocks-libev ];then
-    mkdir /etc/shadowsocks-libev
-fi
+[ ! -d /etc/shadowsocks-libev ] && mkdir /etc/shadowsocks-libev
 #only 0.0.0.0
 cat > /etc/shadowsocks-libev/config.json<<EOF
 {
@@ -274,7 +272,7 @@ if [ $? -eq 0 ]; then
     exit
 else
     echo "Shadowsocks-libev start failure!"
-	exit
+    exit
 fi
 }
 
