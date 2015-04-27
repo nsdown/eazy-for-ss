@@ -119,3 +119,26 @@ function Get_shell_path {
     cd $Now_work_path
     echo $This_shell_path
 }
+#if !(Check_Tcp_Port "123"); then
+#echo "tcp-port 123 is in use"
+#fi
+function Check_Tcp_Port(){
+    All_Listen_Tcp_Port=`netstat -napt|grep -i 'listen'|awk {'print $4'}|sed 's/.*:\(.*\)/\1/'|sort|uniq`
+    Port=""
+    for Port in $All_Listen_Tcp_Port
+    do
+        if [ "$1" = "$Port" ]; then
+            return 1
+        fi
+    done
+}
+function Check_Udp_Port(){
+    All_Udp_Port=`netstat -napu|grep udp|awk {'print $4'}|sed 's/.*:\(.*\)/\1/'|sort|uniq`
+    Port=""
+    for Port in $All_Udp_Port
+    do
+        if [ "$1" = "$Port" ]; then
+            return 1
+        fi
+    done
+}
