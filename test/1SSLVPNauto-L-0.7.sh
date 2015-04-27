@@ -307,10 +307,10 @@ function Dependencies_install_onebyone(){
         print_info "Installing $OC_DP "
         DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $TEST_S $OC_DP
         if [ $? -eq 0 ]; then
-            print_info "[$OC_DP] ok!"
+            print_info "[ ${OC_DP} ] ok!"
             apt-get clean
         else
-            print_warn "[$OC_DP] not be installed!"
+            print_warn "[ ${OC_DP} ] not be installed!"
         fi
     done
 }
@@ -334,7 +334,7 @@ function tar_lz4_install(){
     else
         ln -sf /usr/local/lib/liblz4.* /usr/lib/i386-linux-gnu/
     fi
-    print_info "[lz4] ok"
+    print_info "[ lz4 ] ok"
 }
 
 #install freeradius-client 1.1.7
@@ -347,7 +347,7 @@ function tar_freeradius_client_install(){
     make -j"$(nproc)" && make install
     cd ..
     rm -rf freeradius-client*
-    print_info "[freeradius-client] ok"
+    print_info "[ freeradius-client ] ok"
 }
 
 #install dependencies 安装依赖文件
