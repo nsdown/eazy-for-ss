@@ -74,6 +74,8 @@ apt-get upgrade -y
 echo linux-image-`uname -r` install | sudo dpkg --set-selections
 apt-get install -y -qq sudo nano sed vim gawk curl dnsutils
 #tcp choice
+#load hybla
+/sbin/modprobe tcp_hybla > /dev/null 2>&1
 sysctl net.ipv4.tcp_available_congestion_control | grep 'hybla' > /dev/null 2>&1
 if [ $? -eq 0 ]; then 
 tcp_congestion_ss="hybla"
@@ -127,7 +129,7 @@ EOF
 #sysctl set
 sysctl -p /etc/sysctl.d/local_ss.conf
 #+source   
-cat /etc/apt/sources.list|grep -v '^#'|grep 'deb http://shadowsocks.org/debian' > /dev/null 2>&1
+sed 's/^[ \t]*//' /etc/apt/sources.list|grep -v '^#'|grep 'shadowsocks' > /dev/null 2>&1
 if [ $? -ne 0 ]; then
     expr $(cat /etc/debian_version|cut -d. -f1|grep -v ^#) + 0 > /dev/null 2>&1
     if [ $? -eq 0 ]; then
@@ -156,7 +158,6 @@ function Check_Tcp_Port(){
         fi
     done
 }
-
 
 function get_config(){
 # Get shadowsocks-libev config password
@@ -192,7 +193,7 @@ if [ "$shadowsocksem" = "" ]; then
 fi
 echo "encryption method:$shadowsocksem"
 echo "####################################"
-#any key go on	
+#any key go on
 get_char(){
     SAVEDSTTY=`stty -g`
     stty -echo
@@ -209,7 +210,7 @@ ss_char=`get_char`
 }
 
 function shadowsocks_update(){
-sudo apt-get update
+apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install shadowsocks-libev -y
 sed -i 's|\(MAXFD=\).*|\151200|' /etc/default/shadowsocks-libev
 }
@@ -232,7 +233,7 @@ EOF
 }
 
 function stop_shadowsocks(){
-sudo /etc/init.d/shadowsocks-libev stop
+/etc/init.d/shadowsocks-libev stop
 #stop all
 ss_pid=`pidof ss-server`
 if [ ! -z "$ss_pid" ]; then
@@ -248,7 +249,7 @@ fi
 
 function stop_start_shadowsocks(){
 stop_shadowsocks
-sudo /etc/init.d/shadowsocks-libev start
+/etc/init.d/shadowsocks-libev start
 }
 
 function show_shadowsocks(){
