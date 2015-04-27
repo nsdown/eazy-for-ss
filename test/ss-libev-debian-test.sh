@@ -72,7 +72,7 @@ apt-get update
 echo linux-image-`uname -r` hold | sudo dpkg --set-selections
 apt-get upgrade -y
 echo linux-image-`uname -r` install | sudo dpkg --set-selections
-apt-get install -y -qq sudo nano sed vim gawk curl dnsutils
+apt-get install -y -qq sudo nano sed vim gawk curl dnsutils apt-transport-https
 #tcp choice
 #load hybla
 /sbin/modprobe tcp_hybla > /dev/null 2>&1
