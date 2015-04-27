@@ -706,6 +706,7 @@ function set_ocserv_conf(){
 }
 
 function two_group_set(){
+    sed -i 's|^[# \t]*\(cert-group-oid = \).*|\12.5.4.11|' /etc/ocserv/ocserv.conf
     sed -i 's|^[# \t]*\(select-group = \)group1.*|\1Route|' /etc/ocserv/ocserv.conf
     sed -i 's|^[# \t]*\(select-group = \)group2.*|\1All|' /etc/ocserv/ocserv.conf
     sed -i 's|^[# \t]*\(default-select-group = \).*|\1Default|' /etc/ocserv/ocserv.conf
@@ -723,7 +724,6 @@ function ca_login_set(){
     sed -i 's|^[# \t]*\(ca-cert = \).*|\1/etc/ocserv/ca-cert.pem|' /etc/ocserv/ocserv.conf
     sed -i 's|^[# \t]*\(crl = \).*|\1/etc/ocserv/crl.pem|' /etc/ocserv/ocserv.conf
     sed -i 's|^[# \t]*\(cert-user-oid = \).*|\12.5.4.3|' /etc/ocserv/ocserv.conf
-    sed -i 's|^[# \t]*\(cert-group-oid = \).*|\12.5.4.11|' /etc/ocserv/ocserv.conf
 }
 
 function stop_ocserv(){
