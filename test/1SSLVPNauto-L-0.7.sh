@@ -206,14 +206,14 @@ function check_Required(){
 #tun/tap
     [ ! -e /dev/net/tun ] && die "TUN/TAP is not available."
 #only Debian 7+
-    cat /etc/issue|grep -i 'debian' && {
+    cat /etc/issue|grep -i 'debian' > /dev/null 2>&1 && {
         oc_D_V=`expr $(cat /etc/debian_version | cut -d. -f1)`
         [ $oc_D_V -lt 7 ] && die "Your system is debian $oc_D_V. Only for Debian 7+."
         [ $oc_D_V -lt 8 ] && oc_D_V="wheezy"
         [ $oc_D_V -lt 9 ] && oc_D_V="jessie"
         print_info "Debian version ok"
     }
-    cat /etc/issue|grep -i 'debian' || {
+    cat /etc/issue|grep -i 'debian' > /dev/null 2>&1 || {
         print_info "Only test on ubuntu 14.04"
         oc_D_V="$(cat /etc/debian_version | cut -d/ -f1)"
     }
