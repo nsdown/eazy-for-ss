@@ -69,7 +69,9 @@ fi
 function pre_install(){
 #base-tool
 apt-get update
+echo linux-image-`uname -r` hold | sudo dpkg --set-selections
 apt-get upgrade -y
+echo linux-image-`uname -r` install | sudo dpkg --set-selections
 apt-get install -y -qq sudo nano sed vim gawk curl dnsutils
 #tcp choice
 sysctl net.ipv4.tcp_available_congestion_control | grep 'hybla' > /dev/null 2>&1
@@ -144,6 +146,18 @@ fi
 clear
 }
 
+function Check_Tcp_Port(){
+    All_Listen_Tcp_Port=`netstat -napt|grep -i 'listen'|awk {'print $4'}|sed 's/.*:\(.*\)/\1/'|sort|uniq`
+    Port=""
+    for Port in $All_Listen_Tcp_Port
+    do
+        if [ "$1" = "$Port" ]; then
+            return 1
+        fi
+    done
+}
+
+
 function get_config(){
 # Get shadowsocks-libev config password
 echo "Please input password for shadowsocks-libev:"
@@ -160,6 +174,15 @@ if [ "$shadowsockspt" = "" ]; then
     shadowsockspt="443"
 fi
 echo "port:$shadowsockspt"
+while !(Check_Tcp_Port "$shadowsockspt"); do
+echo "The port is in use , please choose a different port!"
+echo "Please input server port for shadowsocks-libev:"
+read -p "(Default port: 443):" shadowsockspt
+if [ "$shadowsockspt" = "" ]; then
+    shadowsockspt="443"
+fi
+echo "port:$shadowsockspt"
+done
 echo "####################################"
 # Get shadowsocks-libev config Encryption Method
 echo "Please input Encryption Method for shadowsocks-libev:"
@@ -186,7 +209,6 @@ ss_char=`get_char`
 }
 
 function shadowsocks_update(){
-echo linux-image-`uname -r` hold | sudo dpkg --set-selections
 sudo apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install shadowsocks-libev -y
 sed -i 's|\(MAXFD=\).*|\151200|' /etc/default/shadowsocks-libev
