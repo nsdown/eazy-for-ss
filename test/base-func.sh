@@ -142,3 +142,7 @@ function Check_Udp_Port(){
         fi
     done
 }
+# Get the directory where this script is and set ROOT_DIR to that path. This
+# allows script to be run from different directories but always act on the
+# directory of the project (which is where this script is located).
+ROOT_DIR="$(cd "$(dirname $0)"; pwd)";
