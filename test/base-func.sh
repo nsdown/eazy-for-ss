@@ -123,7 +123,7 @@ function Get_shell_path {
 #echo "tcp-port 123 is in use"
 #fi
 function Check_Tcp_Port(){
-    All_Listen_Tcp_Port=`netstat -nalt|grep -i 'listen'|awk {'print $4'}|sed 's/.*:\(.*\)/\1/'|sort|uniq`
+    All_Listen_Tcp_Port=`netstat -nalt|grep LISTEN|awk '{print $4}'|sed 's/.*://'|sort|uniq`
     Port=""
     for Port in $All_Listen_Tcp_Port
     do
@@ -133,7 +133,7 @@ function Check_Tcp_Port(){
     done
 }
 function Check_Udp_Port(){
-    All_Udp_Port=`netstat -nalu|grep udp|awk {'print $4'}|sed 's/.*:\(.*\)/\1/'|sort|uniq`
+    All_Udp_Port=`netstat -nalu|grep udp|awk '{print $4}'|sed 's/.*://'|sort|uniq`
     Port=""
     for Port in $All_Udp_Port
     do
