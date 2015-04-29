@@ -211,6 +211,7 @@ function check_Required(){
         [ $oc_D_V -lt 7 ] && die "Your system is debian $oc_D_V. Only for Debian 7+."
         [ "$oc_D_V" = "7" ] && oc_D_V="wheezy"
         [ "$oc_D_V" = "8" ] && oc_D_V="jessie"
+        [ "$oc_D_V" = "9" ] && oc_D_V="stretch"
         print_info "Debian version ok"
     }
     cat /etc/issue|grep -i 'debian' > /dev/null 2>&1 || {
@@ -404,7 +405,7 @@ EOF
 
 #install 编译安装
 function tar_ocserv_install(){
-    cd /root
+    cd ${Script_Dir}
 #default max route rulers
     max_router=${max_router:-200}
 #default version  默认版本
@@ -415,21 +416,20 @@ function tar_ocserv_install(){
     cd ocserv-$oc_version
 #have to use "" then $ work ,set router limit 设定路由规则最大限制
     sed -i "s|\(#define MAX_CONFIG_ENTRIES \).*|\1$max_router|" src/vpn.h
-    ./configure --prefix=/usr --sysconfdir=/etc 2>/root/ocerror.log
-    make -j"$(nproc)" 2>>/root/ocerror.log
+    ./configure --prefix=/usr --sysconfdir=/etc 2>${Script_Dir}/ocerror.log
+    make -j"$(nproc)" 2>>${Script_Dir}/ocerror.log
     make install
 #check install 检测编译安装是否成功
     [ ! -f /usr/sbin/ocserv ] && {
         make clean
-        die "Ocserv install failure,check /root/ocerror.log"
+        die "Ocserv install failure,check ${Script_Dir}/ocerror.log"
     }
 #mv files
-    rm -f /root/ocerror.log
+    rm -f ${Script_Dir}/ocerror.log
     mkdir -p /etc/ocserv/CAforOC/revoke > /dev/null 2>&1
     mkdir /etc/ocserv/{config-per-group,defaults} > /dev/null 2>&1
     cp doc/profile.xml /etc/ocserv
     sed -i "s|localhost|$ocserv_hostname|" /etc/ocserv/profile.xml
-    cp doc/dbus/org.infradead.ocserv.conf /etc/dbus-1/system.d
     cd ..
     rm -rf ocserv-$oc_version
 #get or set config file
@@ -654,8 +654,8 @@ _EOF_
     certtool --generate-certificate --load-privkey user-${name_user_ca}/user-${name_user_ca}-key.pem --load-ca-certificate ca-cert.pem --load-ca-privkey ca-key.pem --template user-${name_user_ca}/user.tmpl --outfile user-${name_user_ca}/user-${name_user_ca}-cert.pem
 #p12
     openssl pkcs12 -export -inkey user-${name_user_ca}/user-${name_user_ca}-key.pem -in user-${name_user_ca}/user-${name_user_ca}-cert.pem -name "user-${name_user_ca}" -certfile ca-cert.pem -caname "$caname" -out user-${name_user_ca}/user-${name_user_ca}.p12 -passout pass:$password
-#cp to root
-    cp user-${name_user_ca}/user-${name_user_ca}.p12 /root
+#cp to ${Script_Dir}
+    cp user-${name_user_ca}/user-${name_user_ca}.p12 ${Script_Dir}
 #make a empty revocation list
     if [ ! -f crl.tmpl ];then
     cat << _EOF_ >crl.tmpl
@@ -758,7 +758,7 @@ function show_ocserv(){
             echo -e "\033[41;37m Your server domain is \033[0m" "$fqdnname:$ocserv_port"
             echo -e "\033[41;37m Your p12-cert's password is \033[0m" "$password"
             echo -e "\033[41;37m Your p12-cert's number of expiration days is \033[0m" "$oc_ex_days"
-            print_warn "You could get user-${name_user_ca}.p12 from /root."
+            print_warn "You could get user-${name_user_ca}.p12 from ${Script_Dir}."
             print_warn "You could stop ocserv by ' /etc/init.d/ocserv stop '!"
             print_warn "Boot from the start or not, use ' sudo insserv ocserv ' or ' sudo insserv -r ocserv '."
             echo ""    
@@ -817,7 +817,7 @@ function get_new_userca_show(){
     echo
     echo -e "\033[41;37m Your p12-cert's password is \033[0m" "$password"
     echo -e "\033[41;37m Your p12-cert's number of expiration days is \033[0m" "$oc_ex_days"
-    print_warn " You could get user-${name_user_ca}.p12 from /root."
+    print_warn " You could get user-${name_user_ca}.p12 from ${Script_Dir}."
     print_warn " You should import the certificate to your device at first."
     echo
     print_info "Enjoy it"
@@ -870,7 +870,6 @@ function revoke_userca(){
 function reinstall_ocserv(){
     stop_ocserv
     rm -rf /etc/ocserv
-    rm -rf /etc/dbus-1/system.d/org.infradead.ocserv.conf
     rm -rf /usr/sbin/ocserv
     rm -rf /etc/init.d/ocserv
     install_OpenConnect_VPN_server
@@ -882,7 +881,6 @@ function upgrade_ocserv(){
     Default_Ask "The maximum number of routing table rules?" "200" "max_router"
     press_any_key
     stop_ocserv
-    rm -f /etc/dbus-1/system.d/org.infradead.ocserv.conf
     rm -f /etc/ocserv/profile.xml
     rm -f /usr/sbin/ocserv
     tar_ocserv_install
@@ -942,7 +940,7 @@ function help_ocservauto(){
     echo
     print_info " revokeuserca or rc ------------ Revoke a client certificate"
     echo
-    print_info " upgrade or ug ----------------- Smooth upgrade your ocserv"
+    print_info " upgrade or ug ----------------- Smoothly upgrade your ocserv"
     echo
     print_info " reinstall or ri --------------- Force to reinstall your ocserv(Destroy All Data)"
     echo
@@ -967,13 +965,16 @@ print_info " Help Info:  bash `basename $0` help"
 echo
 echo "==============================================================================================="
 
+#脚本所在文件夹
+Script_Dir="$(cd "$(dirname $0)"; pwd)"
 #fastmode vars 存放配置参数文件的绝对路径，快速安装模式可用
-CONFIG_PATH_VARS="/root/vars_ocservauto"
+CONFIG_PATH_VARS="${Script_Dir}/vars_ocservauto"
 #ocserv配置文件所在的网络文件夹位置，请勿轻易改变
 OC_CONF_NET_DOC="https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto"
 #推荐的默认版本
 Default_oc_version="0.10.2"
 open_two_group="n"
+
 
 #Initialization step
 action=$1
