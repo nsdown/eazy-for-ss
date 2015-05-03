@@ -8,7 +8,7 @@
 # universal as possible.
 
 
-if [[ "$USER" != 'root' ]]; then
+if [[ $EUID -ne 0 ]]; then
 	echo "Sorry, you need to run this as root"
 	exit
 fi
@@ -44,7 +44,7 @@ newclient () {
 	sed -i "/ca ca.crt/d" ~/$1.ovpn
 	sed -i "/cert client.crt/d" ~/$1.ovpn
 	sed -i "/key client.key/d" ~/$1.ovpn
-	sed -i 's|;cipher.*|cipher AES-128-CBC|' ~/$1.ovpn
+	sed -i "s|;cipher.*|cipher ${Cipher_Type}|" ~/$1.ovpn
 	echo "key-direction 1" >> ~/$1.ovpn
 	echo "<tls-auth>" >> ~/$1.ovpn
 	cat /etc/openvpn/ta.key >> ~/$1.ovpn
@@ -77,6 +77,12 @@ IP=$(ip addr | grep 'inet' | grep -v inet6 | grep -vE '127\.[0-9]{1,3}\.[0-9]{1,
 if [[ "$IP" = "" ]]; then
 		IP=$(wget -qO- ipv4.icanhazip.com)
 fi
+
+
+#crypto standards,1024 is too weak~~4096or8192 is ok.
+#AES-128-CBC is default cipher.
+Key_Bit="2048"
+Cipher_Type="AES-128-CBC"
 
 
 if [[ -e /etc/openvpn/server.conf ]]; then
@@ -216,7 +222,7 @@ else
 	# Let's fix one thing first...
 	cp -u -p openssl-1.0.0.cnf openssl.cnf
 	# Fuck you NSA - 1024 bits was the default for Debian Wheezy and older
-	sed -i 's|export KEY_SIZE=1024|export KEY_SIZE=2048|' /etc/openvpn/easy-rsa/2.0/vars
+	sed -i "s|\(export KEY_SIZE=\).*|\1${Key_Bit}|" /etc/openvpn/easy-rsa/2.0/vars
 	# Create the PKI
 	. /etc/openvpn/easy-rsa/2.0/vars
 	. /etc/openvpn/easy-rsa/2.0/clean-all
@@ -241,15 +247,15 @@ else
 	fi
 	cp server.conf /etc/openvpn/
 	cd /etc/openvpn/easy-rsa/2.0/keys
-	cp ca.crt ca.key dh2048.pem server.crt server.key /etc/openvpn
+	cp ca.crt ca.key dh${Key_Bit}.pem server.crt server.key /etc/openvpn
 	cd /etc/openvpn/
 	# Set the server configuration
 	openvpn --genkey --secret ta.key
-	sed -i 's|dh dh1024.pem|dh dh2048.pem|' server.conf
+	sed -i "s|\(dh dh\).*|\1${Key_Bit}\.pem|" server.conf
 	sed -i 's|;push "redirect-gateway def1 bypass-dhcp"|push "redirect-gateway def1 bypass-dhcp"|' server.conf
 	sed -i "s|port 1194|port $PORT|" server.conf
 	sed -i 's|;tls-auth|tls-auth|' server.conf
-	sed -i 's|;cipher AES-128-CBC|cipher AES-128-CBC|' server.conf
+	sed -i "s|;cipher AES-128-CBC|cipher ${Cipher_Type}|" server.conf
 	#允许同账号异地登录及网络优化
 	sed -i 's|;duplicate-cn|duplicate-cn|' server.conf
 	cat << _EOF_ >> server.conf
