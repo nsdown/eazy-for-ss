@@ -1,6 +1,6 @@
 ##Ocservauto For Debian 0.7
 
-This script may help you setup your own openconnetc_server in debian(>=7),ubuntu(>=13.10).
+This script may help you setup your own openconnect_server in debian(>=7),ubuntu(>=13.10).
 
 这是一枚适用于deibian的openconnect_server安装脚本。中文详情 [戳这里](http://www.fanyueciyuan.info/fq/ocserv-debian.html)
 
