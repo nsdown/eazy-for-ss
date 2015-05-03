@@ -1,4 +1,4 @@
-#这是一个脚本自动生成的证书登录的配置，一般保存在root目录下
+#这是一个脚本自动生成的证书登录的配置。
 #是否自定义安装
 Custom_config_ocserv='y'
 #是否自签证书
@@ -19,9 +19,7 @@ ocserv_boot_start='y'
 #证书登录，否则用户名密码登录
 ca_login='y'
 #安装版本
-oc_version='0.10.2'
-#是否强制从debian_jessie安装lz4,默认编译安装lz4
-oc_force_lz4='n'
+oc_version='0.10.4'
 #是否保存本配置文件
 save_user_vars='y'
 #初始用户名，证书登录无效
