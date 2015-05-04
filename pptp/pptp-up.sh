@@ -40,4 +40,8 @@ if !(iptables-save -t mangle | grep -q "$GATEWAY (pptp_6)"); then
 iptables -t mangle -A FORWARD -p tcp -m tcp --tcp-flags SYN,RST SYN -m comment --comment "$GATEWAY (pptp_6)" -j TCPMSS --clamp-mss-to-pmtu
 fi
 
+if !(iptables-save -t filter | grep -q "$GATEWAY (pptp_7)"); then
+iptables -A FORWARD -m state --state RELATED,ESTABLISHED -m comment --comment "$GATEWAY (pptp_7)" -j ACCEPT
+fi
+
 echo -n "..."
