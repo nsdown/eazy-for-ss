@@ -165,6 +165,7 @@ function tar_install(){
 #keep kernel 防止某些情况下内核升级
     echo linux-image-`uname -r` hold | sudo dpkg --set-selections > /dev/null 2>&1
     apt-get upgrade -y
+    echo linux-image-`uname -r` install | sudo dpkg --set-selections > /dev/null 2>&1
 #安装必要依赖
     DEBIAN_FRONTEND=noninteractive apt-get install -y libpam0g-dev libssl-dev make gcc build-essential pkg-config m4 libcurl4-openssl-dev libtspi-dev    
 #获取最新版本
@@ -176,7 +177,9 @@ function tar_install(){
     [ "$openvz" = "y" ] && Add_Parameter="--enable-kernel-libipsec"
     ./configure -prefix=/usr -sysconfdir=/etc -libexecdir=/usr/lib --enable-eap-identity --enable-eap-md5 --enable-eap-mschapv2 --enable-eap-tls --enable-eap-ttls --enable-eap-peap  --enable-eap-tnc --enable-eap-dynamic --enable-eap-radius --enable-xauth-eap  --enable-xauth-pam  --enable-dhcp  --enable-openssl  --enable-addrblock --enable-unity  --enable-certexpire --enable-radattr --disable-gmp $Add_Parameter
     make -j"$(nproc)" && make install
-    [ ! -f /usr/sbin/ipsec ] && die "Install failure,check dependencies!"
+    [ ! -f /usr/sbin/ipsec ] && {
+        make clean
+        die "Install failure,check dependencies!"}
     cd ..
     rm -r strongswan-*
     print_info "Install ok"
@@ -383,10 +386,14 @@ if !(iptables-save -t filter | grep -q "$gw_IPsec (IPSecIKEv1v2_5)"); then
 iptables -A INPUT -p esp -m comment --comment "$gw_IPsec (IPSecIKEv1v2_5)" -j ACCEPT
 fi
 
+if !(iptables-save -t filter | grep -q "$gw_IPsec (IPSecIKEv1v2_6)"); then
+iptables -A FORWARD  -m state --state RELATED,ESTABLISHED -m comment --comment $gw_IPsec (IPSecIKEv1v2_6)" -j ACCEPT
+fi
+
 # turn on MSS fix
 # MSS = MTU - TCP header - IP header
-if !(iptables-save -t mangle | grep -q "$gw_IPsec (IPSecIKEv1v2_6)"); then
-iptables -t mangle -A FORWARD -p tcp -m tcp --tcp-flags SYN,RST SYN -m comment --comment "$gw_IPsec (IPSecIKEv1v2_6)" -j TCPMSS --clamp-mss-to-pmtu
+if !(iptables-save -t mangle | grep -q "$gw_IPsec (IPSecIKEv1v2_7)"); then
+iptables -t mangle -A FORWARD -p tcp -m tcp --tcp-flags SYN,RST SYN -m comment --comment "$gw_IPsec (IPSecIKEv1v2_7)" -j TCPMSS --clamp-mss-to-pmtu
 fi
 EOF
     chmod +x /etc/ipsec.d/start-ipsec-sysctl.sh
