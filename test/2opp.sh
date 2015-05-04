@@ -43,12 +43,13 @@ function Default_Ask(){
     echo -e -n "\e[1;36m$Temp_question\e[0m""\033[31m(Default:$Temp_default_var)\033[0m"
     echo
     read Temp_var
-    if [ "$Temp_default_var" = "y" ] || [ "$Temp_default_var" = "n" ] ; then
+    if [ "$Temp_default_var" = "y" ] || [ "$Temp_default_var" = "n" ]; then
+        Temp_var=$(echo $Temp_var | sed 'y/YESNO0/yesnoo/')
         case $Temp_var in
-            y|Y|Yes|YES|yes|yES|yEs|YeS|yeS)
+            y|ye|yes)
                 Temp_var=y
                 ;;
-            n|N|No|NO|no|nO)
+            n|no)
                 Temp_var=n
                 ;;
             *)
@@ -60,7 +61,6 @@ function Default_Ask(){
     fi
     Temp_cmd="$Temp_var_name='$Temp_var'"
     eval $Temp_cmd
-    echo
     print_info "Your answer is : ${Temp_var}"
     echo
     print_xxxx
