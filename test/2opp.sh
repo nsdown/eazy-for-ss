@@ -2,7 +2,7 @@
 #######################################################
 #debian 7                                             #
 #RAM>=128M                                            #
-#                                                     #
+#添加安全模块                                         #
 ###################################################################################################################
 #base-function                                                                                                    #
 ###################################################################################################################
@@ -40,7 +40,8 @@ function Default_Ask(){
     Temp_default_var=$2
     Temp_var_name=$3
 #if yes or no 
-    echo -e -n "\e[1;36m$Temp_question\e[0m""\033[31m(Default:$Temp_default_var): \033[0m"
+    echo -e -n "\e[1;36m$Temp_question\e[0m""\033[31m(Default:$Temp_default_var)\033[0m"
+    echo
     read Temp_var
     if [ "$Temp_default_var" = "y" ] || [ "$Temp_default_var" = "n" ] ; then
         case $Temp_var in
@@ -82,13 +83,9 @@ function press_any_key {
 }
 #get random word 获取$1位随机文本
 function get_random_word(){
-    index=0
-    str=""
-    for i in {a..z}; do arr[index]=$i; index=$(expr ${index} + 1); done
-    for i in {A..Z}; do arr[index]=$i; index=$(expr ${index} + 1); done
-    for i in {0..9}; do arr[index]=$i; index=$(expr ${index} + 1); done
-#$1 figures
-    for i in `seq 1 $1`; do str="$str${arr[$RANDOM%$index]}"; done
+    D_Num_Random="8"
+    Num_Random=${1:-$D_Num_Random}
+    str=`cat /dev/urandom | tr -cd abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789 | head -c $Num_Random`
     echo $str
 }
 ###################################################################################################################
@@ -96,39 +93,26 @@ function get_random_word(){
 ###################################################################################################################
 function Check_Required {
 #check root
-    if [ $(/usr/bin/id -u) != "0" ]
-    then
-        die 'Must be run by root user'
-    fi
+    [ $EUID -ne 0 ] && die 'Must be run by root user.'
     print_info "Root ok"
-#debian only
-    if [ ! -f /etc/debian_version ]
-    then
-        die "Looks like you aren't running this installer on a Debian-based system"
-    fi
-    print_info "Debian ok"
-#only Debian 6 7
-    expr $(cat /etc/debian_version | cut -d. -f1) + 0 > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
-        D_V=`expr $(cat /etc/debian_version | cut -d. -f1)`
-        if [ $D_V -lt 6 ]
-        then
-            die "Your system is debian $oc_D_V. Only for Debian 6 7"
-        fi
-        print_info "Debian version ok"
-    else
-        print_warn "ubuntu not test"
-        D_V="$(cat /etc/debian_version)"
-    fi
-#get IPv4 info,install base-tools 
-    print_info "Getting ip and base-tools from net......"
+#debian-based only
+    [ ! -f /etc/debian_version ] && die "Must be run on a Debian-based system."
+    print_info "Debian-based ok"
+#get IPv4 info
+    get_info_from_net
+    print_info "Get ip ok"
+#install base-tools 
+    print_info "Installing base-tools from net......"
     apt-get update  -qq
-    apt-get install -qq -y vim sudo gawk curl nano sed dnsutils
+    apt-get install -qq -y vim sudo gawk curl nano sed dnsutils   
+    print_info " Install base-tools ok"
+}
+function get_info_from_net(){
     IP=$(wget -qO- ipv4.icanhazip.com)
     if [ $? -ne 0 -o -z $IP ]; then
         IP=`dig +short +tcp myip.opendns.com @resolver1.opendns.com`
     fi
-    print_info "Get ip and base-tools ok"
+
 }
 function Add_dotdeb {
     cat /etc/apt/sources.list | grep -v '^#' | grep 'dotdeb' > /dev/null 2>&1
@@ -164,18 +148,18 @@ function Get_config_ONLYC {
     Default_Ask "The manage server's shadowsocks database password?" "12345678" "DB_SS_PW"
 }
 function Install_lnmp {
-    invoke-rc.d sendmail stop > /dev/null 2>1&
+    invoke-rc.d sendmail stop > /dev/null  2>&1
     apt-get -q -y remove --purge sendmail* apache2* portmap samba* nscd bind9*
     apt-get -q -y autoremove
     apt-get -q -y autoclean
     apt-get -q -y clean
     apt-get upgrade -y
-    DEBIAN_FRONTEND=noninteractive apt-get install -y -q nginx-full php5-cli php5-fpm php5-gd php5-mysql php5-curl mysql-server mysql-client
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -q nginx-full php5-cli php5-fpm php5-gd php5-mysqlnd php5-curl mysql-server mysql-client
 #Nginx
     cat > /etc/nginx/conf.d/nginx_Our_Private_Panel.conf <<'EOF'
 server {
     listen 88;
-    server_name Our_Private_Panel_Domain;	
+    server_name Our_Private_Panel_Domain;
     root /var/www/Our_Private_Panel_Domain;
     index index.html index.htm index.php;
     client_max_body_size 32m;
@@ -298,7 +282,7 @@ EOF
 function Install_shadowsocks_manyuser {
     DEBIAN_FRONTEND=noninteractive apt-get install -y -q build-essential autoconf libtool libssl-dev git python-pip python-m2crypto supervisor
     pip install cymysql
-    cd /root	
+    cd /root
     git clone -b manyuser https://github.com/mengskysama/shadowsocks.git
     cd shadowsocks/shadowsocks
     echo "MANAGE_PASS = $DB_PASS" >> /root/OPP.conf
